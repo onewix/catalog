@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Premium Catalog</title>
+    <title>Premium Shop</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        /* МАРКЕР: СТИЛИ И ПЕРЕМЕННЫЕ */
         :root {
             --bg: #0a0a0a;
             --card: #161618;
@@ -19,234 +18,105 @@
             --glass-border: rgba(255, 255, 255, 0.1);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 16px; transition: all 0.3s; }
 
-        body {
-            background-color: var(--tg-theme-bg-color, var(--bg));
-            color: var(--tg-theme-text-color, var(--text));
-            padding: 16px;
-            overflow-x: hidden;
-            animation: fadeIn 0.5s ease;
-        }
-
-        /* МАРКЕР: АНИМАЦИИ */
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideRight { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-        @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        /* МАРКЕР: АНИМАЦИИ ПЕРЕКЛЮЧЕНИЯ СТРАНИЦ */
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* ШАПКА */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background: var(--bg);
-            padding: 5px 0;
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header-btn { background: none; border: none; color: var(--text); font-size: 20px; cursor: pointer; position: relative; }
+        
+        .cart-badge {
+            position: absolute; top: -5px; right: -8px; background: var(--accent);
+            font-size: 10px; padding: 2px 6px; border-radius: 10px; display: none;
         }
 
-        .menu-btn, .cart-icon-top, .add-btn-top {
-            font-size: 20px;
-            cursor: pointer;
-            transition: transform 0.2s, opacity 0.2s;
-            color: var(--text);
-            background: none;
-            border: none;
+        /* ПОИСК И СЕТКА */
+        .search-input { width: 100%; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 12px; padding: 12px; color: white; margin-bottom: 20px; outline: none; }
+        .catalog { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .product-card { background: var(--card); border-radius: 16px; padding: 10px; border: 1px solid var(--glass-border); }
+        .product-img { width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; background: var(--glass); }
+        
+        /* ЭКРАН КОРЗИНЫ */
+        .cart-item {
+            display: flex; align-items: center; background: var(--card); 
+            padding: 12px; border-radius: 16px; margin-bottom: 10px; gap: 12px;
+            animation: fadeIn 0.3s ease;
+        }
+        .cart-item img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
+        .cart-item-info { flex: 1; }
+        .qty-controls { display: flex; align-items: center; gap: 12px; background: var(--glass); padding: 4px 10px; border-radius: 20px; }
+        .qty-btn { border: none; background: none; color: var(--accent); font-size: 18px; font-weight: bold; cursor: pointer; }
+
+        /* КНОПКА ОФОРМИТЬ */
+        .order-footer {
+            position: fixed; bottom: 0; left: 0; right: 0; padding: 20px;
+            background: linear-gradient(transparent, var(--bg) 20%);
+        }
+        .main-btn {
+            width: 100%; background: var(--accent); border: none; padding: 16px;
+            border-radius: 16px; color: white; font-weight: 600; font-size: 16px;
         }
 
-        .menu-btn:active, .cart-icon-top:active { transform: scale(0.9); opacity: 0.7; }
-
-        /* ПОИСК */
-        .search-container {
-            margin-bottom: 20px;
-            animation: fadeIn 0.8s ease;
-        }
-
-        .search-input {
-            width: 100%;
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 12px 16px;
-            color: white;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        .search-input:focus { border-color: var(--accent); }
-
-        /* БОКОВОЕ МЕНЮ */
-        .side-menu {
-            position: fixed;
-            top: 0; left: 0; width: 70%; height: 100%;
-            background: var(--card);
-            z-index: 100;
-            padding: 40px 20px;
-            display: none;
-            flex-direction: column;
-            gap: 20px;
-            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
-        }
-
-        .menu-item {
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 10px;
-            border-radius: 8px;
-            transition: background 0.2s;
-        }
-
-        .menu-item:active { background: var(--glass); }
-
-        .overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            display: none;
-            z-index: 99;
-        }
-
-        /* КАТАЛОГ */
-        .catalog {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-
-        .product-card {
-            background: var(--card);
-            border-radius: 16px;
-            padding: 10px;
-            animation: scaleUp 0.4s ease forwards;
-            border: 1px solid var(--glass-border);
-        }
-
-        .product-img {
-            width: 100%;
-            height: 110px;
-            object-fit: cover;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            background: var(--glass);
-        }
-
-        .buy-btn {
-            width: 100%;
-            margin-top: 10px;
-            padding: 8px;
-            border-radius: 8px;
-            border: none;
-            background: var(--accent);
-            color: white;
-            font-weight: 600;
-        }
-
-        /* КВАДРАТ ЗАГРУЗКИ ФОТО */
-        .image-upload-wrapper {
-            width: 100px;
-            height: 100px;
-            border: 2px dashed var(--glass-border);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            background: var(--glass);
-            margin: 0 auto 10px;
-            overflow: hidden;
-            transition: all 0.3s;
-        }
-
-        .image-upload-wrapper:active { transform: scale(0.95); border-color: var(--accent); }
-
-        .image-upload-wrapper img {
-            width: 100%; height: 100%; object-fit: cover;
-            position: absolute; top: 0; left: 0; display: none;
-        }
-
-        .image-upload-wrapper i { font-size: 24px; color: var(--hint); }
-
-        #p-img {
-            position: absolute; width: 100%; height: 100%;
-            opacity: 0; cursor: pointer;
-        }
-
-        /* МОДАЛКА */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 1000;
-            justify-content: center; align-items: center; backdrop-filter: blur(8px);
-        }
-
-        .modal-content {
-            background: var(--card); padding: 25px; border-radius: 20px;
-            width: 85%; display: flex; flex-direction: column; gap: 15px;
-            animation: scaleUp 0.3s ease;
-        }
-
-        /* КОРЗИНА ВНИЗУ */
-        .cart-bar {
-            position: fixed; bottom: 20px; left: 20px; right: 20px;
-            background: var(--accent); padding: 15px; border-radius: 15px;
-            display: none; justify-content: space-between; align-items: center;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-            animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes slideUp { from { transform: translateY(100px); } to { transform: translateY(0); } }
+        /* МОДАЛКА ДОБАВЛЕНИЯ */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 85%; display: flex; flex-direction: column; gap: 15px; }
+        .image-upload { width: 100px; height: 100px; border: 2px dashed var(--glass-border); border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto; position: relative; overflow: hidden; background: var(--glass); }
+        #p-img { position: absolute; opacity: 0; width: 100%; height: 100%; }
+        #preview-img { width: 100%; height: 100%; object-fit: cover; display: none; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <button class="menu-btn" onclick="toggleMenu(true)"><i class="fa-solid fa-bars"></i></button>
-        <h2 style="font-size: 18px;">Каталог</h2>
-        <div style="display: flex; gap: 15px; align-items: center;">
-            <button class="add-btn-top" onclick="toggleModal(true)"><i class="fa-solid fa-plus"></i></button>
-            <button class="cart-icon-top" onclick="toggleMenu(true)"><i class="fa-solid fa-cart-shopping"></i></button>
+    <div id="catalog-page" class="page active">
+        <div class="header">
+            <button class="header-btn" onclick="toggleMenu()"><i class="fa-solid fa-bars"></i></button>
+            <h2 style="font-size: 18px;">Магазин</h2>
+            <div style="display: flex; gap: 15px;">
+                <button class="header-btn" onclick="toggleModal(true)"><i class="fa-solid fa-plus"></i></button>
+                <button class="header-btn" onclick="openCart()">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span id="cart-badge" class="cart-badge">0</span>
+                </button>
+            </div>
         </div>
+        <input type="text" class="search-input" placeholder="Поиск товаров..." oninput="search(this.value)">
+        <div class="catalog" id="catalog-list"></div>
     </div>
 
-    <div class="search-container">
-        <input type="text" class="search-input" placeholder="Поиск товаров..." oninput="searchProducts(this.value)">
-    </div>
-
-    <div class="catalog" id="catalog"></div>
-
-    <div class="overlay" id="overlay" onclick="toggleMenu(false)"></div>
-    <div class="side-menu" id="side-menu">
-        <h3 style="margin-bottom: 20px;">Меню</h3>
-        <div class="menu-item" onclick="toggleMenu(false)"><i class="fa-solid fa-house"></i> Главная</div>
-        <div class="menu-item" onclick="showCartInfo()"><i class="fa-solid fa-basket-shopping"></i> Корзина</div>
-        <div class="menu-item" onclick="toggleMenu(false)"><i class="fa-solid fa-magnifying-glass"></i> Поиск</div>
-        <div class="menu-item" onclick="tg.close()" style="color: #ff3b30; margin-top: auto;"><i class="fa-solid fa-xmark"></i> Закрыть</div>
+    <div id="cart-page" class="page">
+        <div class="header">
+            <button class="header-btn" onclick="openCatalog()"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2 style="font-size: 18px;">Корзина</h2>
+            <div style="width: 20px;"></div>
+        </div>
+        <div id="cart-items-list"></div>
+        <div class="order-footer">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-weight: 500;">
+                <span>Итого:</span>
+                <span id="total-sum">0 ₴</span>
+            </div>
+            <button class="main-btn" onclick="checkout()">Оформить заказ</button>
+        </div>
     </div>
 
     <div class="modal" id="modal">
         <div class="modal-content">
             <h3 style="text-align: center;">Новый товар</h3>
-            
-            <div class="image-upload-wrapper">
-                <i class="fa-solid fa-camera"></i>
+            <div class="image-upload">
+                <i class="fa-solid fa-camera" id="cam-icon"></i>
                 <img id="preview-img">
                 <input type="file" id="p-img" accept="image/*" onchange="previewFile()">
             </div>
-
-            <input type="text" id="p-name" class="search-input" placeholder="Название товара">
+            <input type="text" id="p-name" class="search-input" placeholder="Название">
             <input type="number" id="p-price" class="search-input" placeholder="Цена (₴)">
-            
-            <button class="buy-btn" onclick="createNewProduct()" style="padding: 12px;">Создать</button>
-            <button onclick="toggleModal(false)" style="background:none; border:none; color:var(--hint); font-size:14px;">Отмена</button>
+            <button class="main-btn" onclick="createProduct()">Создать</button>
+            <button onclick="toggleModal(false)" style="background:none; border:none; color:var(--hint);">Отмена</button>
         </div>
-    </div>
-
-    <div class="cart-bar" id="cart-bar" onclick="sendOrder()">
-        <span id="cart-count">В корзине: 0</span>
-        <span id="cart-total" style="font-weight: bold;">0 ₴</span>
     </div>
 
     <script>
@@ -254,102 +124,113 @@
         tg.expand();
 
         let products = [];
-        let cart = [];
+        let cart = {}; // Храним в формате { id: {item, qty} }
 
-        function toggleMenu(show) {
-            const menu = document.getElementById('side-menu');
-            const overlay = document.getElementById('overlay');
-            menu.style.display = show ? 'flex' : 'none';
-            overlay.style.display = show ? 'block' : 'none';
-            if(show) menu.style.animation = 'slideRight 0.3s ease';
+        function openCart() {
+            document.getElementById('catalog-page').classList.remove('active');
+            document.getElementById('cart-page').classList.add('active');
+            renderCart();
         }
 
-        function toggleModal(show) {
-            document.getElementById('modal').style.display = show ? 'flex' : 'none';
+        function openCatalog() {
+            document.getElementById('cart-page').classList.remove('active');
+            document.getElementById('catalog-page').classList.add('active');
         }
 
-        // МАРКЕР: ПРЕДПРОСМОТР ФОТО
+        function toggleModal(s) { document.getElementById('modal').style.display = s ? 'flex' : 'none'; }
+
         function previewFile() {
             const file = document.getElementById('p-img').files[0];
-            const preview = document.getElementById('preview-img');
-            const icon = document.querySelector('.image-upload-wrapper i');
             const reader = new FileReader();
-
-            reader.onloadend = function () {
-                preview.src = reader.result;
-                preview.style.display = 'block';
-                icon.style.display = 'none';
+            reader.onloadend = () => {
+                document.getElementById('preview-img').src = reader.result;
+                document.getElementById('preview-img').style.display = 'block';
+                document.getElementById('cam-icon').style.display = 'none';
             }
-
             if (file) reader.readAsDataURL(file);
         }
 
-        function createNewProduct() {
+        function createProduct() {
             const name = document.getElementById('p-name').value;
             const price = document.getElementById('p-price').value;
             const img = document.getElementById('preview-img').src;
-
-            if (!name || !price) return;
-
-            const product = { id: Date.now(), name, price: parseInt(price), img: img.includes('data:') ? img : '' };
-            products.push(product);
+            if(!name || !price) return;
+            const p = { id: Date.now(), name, price: parseInt(price), img: img.includes('data:') ? img : '' };
+            products.push(p);
             renderCatalog(products);
             toggleModal(false);
-            
-            // Сброс формы
-            document.getElementById('p-name').value = '';
-            document.getElementById('p-price').value = '';
-            document.getElementById('preview-img').style.display = 'none';
-            document.querySelector('.image-upload-wrapper i').style.display = 'block';
         }
 
-        function renderCatalog(items) {
-            const container = document.getElementById('catalog');
-            container.innerHTML = '';
-            items.forEach(p => {
-                const card = document.createElement('div');
-                card.className = 'product-card';
-                card.innerHTML = `
+        function renderCatalog(list) {
+            const c = document.getElementById('catalog-list');
+            c.innerHTML = list.map(p => `
+                <div class="product-card">
                     <img src="${p.img || 'https://via.placeholder.com/150'}" class="product-img">
                     <div style="font-size: 14px; font-weight: 500;">${p.name}</div>
-                    <div style="color: var(--accent); font-size: 13px; margin-top: 4px;">${p.price} ₴</div>
-                    <button class="buy-btn" onclick="addToCart(${p.id})">В корзину</button>
-                `;
-                container.appendChild(card);
-            });
+                    <div style="color: var(--accent); margin: 4px 0;">${p.price} ₴</div>
+                    <button class="main-btn" style="padding: 8px; font-size: 12px;" onclick="addToCart(${p.id})">Добавить</button>
+                </div>
+            `).join('');
         }
 
         function addToCart(id) {
             const p = products.find(x => x.id === id);
-            cart.push(p);
-            tg.HapticFeedback.notificationOccurred('success');
-            updateCartUI();
+            if(cart[id]) cart[id].qty++;
+            else cart[id] = { ...p, qty: 1 };
+            tg.HapticFeedback.impactOccurred('light');
+            updateBadge();
         }
 
-        function updateCartUI() {
-            const bar = document.getElementById('cart-bar');
-            if (cart.length > 0) {
-                bar.style.display = 'flex';
-                document.getElementById('cart-count').innerText = `В корзине: ${cart.length}`;
-                const total = cart.reduce((s, i) => s + i.price, 0);
-                document.getElementById('cart-total').innerText = `${total} ₴`;
+        function updateBadge() {
+            const count = Object.values(cart).reduce((s, i) => s + i.qty, 0);
+            const b = document.getElementById('cart-badge');
+            b.innerText = count;
+            b.style.display = count > 0 ? 'block' : 'none';
+        }
+
+        function renderCart() {
+            const list = document.getElementById('cart-items-list');
+            const items = Object.values(cart);
+            if(items.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:var(--hint); margin-top:50px;">Корзина пуста</p>';
+                document.getElementById('total-sum').innerText = '0 ₴';
+                return;
             }
+            list.innerHTML = items.map(i => `
+                <div class="cart-item">
+                    <img src="${i.img || 'https://via.placeholder.com/150'}">
+                    <div class="cart-item-info">
+                        <div style="font-size: 14px;">${i.name}</div>
+                        <div style="color: var(--accent); font-size: 13px;">${i.price} ₴</div>
+                    </div>
+                    <div class="qty-controls">
+                        <button class="qty-btn" onclick="updateQty(${i.id}, -1)">-</button>
+                        <span>${i.qty}</span>
+                        <button class="qty-btn" onclick="updateQty(${i.id}, 1)">+</button>
+                    </div>
+                </div>
+            `).join('');
+            const total = items.reduce((s, i) => s + (i.price * i.qty), 0);
+            document.getElementById('total-sum').innerText = total + ' ₴';
         }
 
-        function searchProducts(query) {
-            const filtered = products.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
-            renderCatalog(filtered);
+        function updateQty(id, delta) {
+            cart[id].qty += delta;
+            if(cart[id].qty <= 0) delete cart[id];
+            renderCart();
+            updateBadge();
         }
 
-        function showCartInfo() {
-            toggleMenu(false);
-            if(cart.length === 0) alert("Корзина пуста");
-            else alert(`У вас товаров в корзине: ${cart.length}`);
+        function checkout() {
+            const items = Object.values(cart);
+            if(items.length === 0) return;
+            // Отправляем данные боту
+            tg.sendData(JSON.stringify(items));
         }
 
-        function sendOrder() {
-            tg.sendData(JSON.stringify(cart));
-            tg.close();
+        function search(q) {
+            const f = products.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
+            renderCatalog(f);
         }
     </script>
 </body>
