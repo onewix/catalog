@@ -5,9 +5,9 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
 
-API_TOKEN = 'ВАШ_ТОКЕН_БОТА'
-ADMIN_IDS = [12345678]  # ЗАМЕНИТЕ НА ВАШ ID
-WEBAPP_URL = 'https://your-github-username.github.io/your-repo/'
+API_TOKEN = '8688478869:AAFRqPKq-_3dvfuXoyQztFQTztcHGtKvaS4'
+ADMIN_IDS = [5548318726]  # ЗАМЕНИТЕ НА ВАШ ID
+WEBAPP_URL = 'https://onewix.github.io/catalog/'
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
