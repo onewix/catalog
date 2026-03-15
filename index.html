@@ -3,55 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Store Full</title>
+    <title>Premium Store</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #0a0a0a; --card: #161618; --accent: #007aff; --text: #ffffff; --hint: #8e8e93; --glass: rgba(255, 255, 255, 0.05); }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: var(--bg); color: var(--text); padding: 16px; overflow-x: hidden; }
+        body { background: var(--bg); color: var(--text); padding: 16px; }
 
-        .page { display: none; animation: fadeIn 0.3s ease; }
-        .page.active { display: block; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* ШАПКА */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .btn-icon { background: none; border: none; color: white; font-size: 20px; cursor: pointer; position: relative; }
         
-        .debug-info { font-size: 10px; color: var(--accent); margin-bottom: 10px; opacity: 0.7; }
+        .debug-id { font-size: 10px; color: var(--accent); opacity: 0.5; margin-bottom: 5px; }
 
         /* КАТАЛОГ */
         .catalog { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
         .product-card { background: var(--card); border-radius: 16px; padding: 10px; position: relative; border: 1px solid var(--glass); }
-        .product-img { width: 100%; height: 110px; object-fit: cover; border-radius: 10px; background: var(--glass); margin-bottom: 8px; }
+        .product-img { width: 100%; height: 110px; object-fit: cover; border-radius: 10px; background: var(--glass); }
         
         .admin-controls { position: absolute; top: 5px; right: 5px; display: none; gap: 5px; z-index: 10; }
         .admin-btn { background: rgba(0,0,0,0.8); border: none; color: white; padding: 6px; border-radius: 8px; font-size: 12px; }
 
-        /* ФОРМЫ И КНОПКИ */
+        /* КНОПКА ДОБАВИТЬ */
+        .add-to-cart-btn { width: 100%; background: var(--accent); border: none; padding: 10px; border-radius: 12px; color: white; font-weight: 600; margin-top: 8px; cursor: pointer; font-size: 13px; }
+
+        /* ФОРМА ОФОРМЛЕНИЯ */
         .input-field { width: 100%; background: var(--glass); border: 1px solid var(--glass); border-radius: 12px; padding: 12px; color: white; outline: none; margin-top: 5px; }
-        .warning-text { opacity: 0.6; font-size: 12px; text-align: center; margin-top: 15px; color: #ff9500; }
-        .main-btn { width: 100%; background: var(--accent); border: none; padding: 16px; border-radius: 16px; color: white; font-weight: 600; margin-top: 10px; transition: 0.2s; }
-        .main-btn:active { transform: scale(0.98); }
+        .warning-label { opacity: 0.6; font-size: 12px; text-align: center; margin-top: 15px; color: #ffbc00; line-height: 1.4; display: block; }
+
+        /* МОДАЛКА (ДИЗАЙН С КАМЕРОЙ) */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 24px; width: 85%; max-width: 400px; }
+        .image-upload { width: 80px; height: 80px; border: 2px dashed var(--glass); border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; position: relative; overflow: hidden; }
+        .image-upload i { font-size: 24px; color: var(--hint); }
+        .image-upload img { position: absolute; width: 100%; height: 100%; object-fit: cover; display: none; }
+        #p-img-input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
 
         /* КОРЗИНА */
-        .cart-item { display: flex; align-items: center; gap: 12px; background: var(--card); padding: 12px; border-radius: 16px; margin-bottom: 10px; }
-        .qty-control { display: flex; align-items: center; gap: 10px; background: var(--glass); padding: 5px 10px; border-radius: 10px; }
+        .cart-item { display: flex; align-items: center; gap: 10px; background: var(--card); padding: 12px; border-radius: 16px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="debug-info" id="debug-text">Загрузка данных пользователя...</div>
+    <div class="debug-id" id="debug-id">ID: loading...</div>
 
     <div id="catalog-page" class="page active">
         <div class="header">
             <h2>Магазин</h2>
-            <div style="display: flex; gap: 20px;">
+            <div style="display: flex; gap: 15px;">
                 <button id="admin-add-btn" class="btn-icon" style="display:none;" onclick="openModal()"><i class="fa-solid fa-plus"></i></button>
-                <button class="btn-icon" onclick="openPage('cart-page')">
-                    <i class="fa-solid fa-cart-shopping"></i>
-                </button>
+                <button class="btn-icon" onclick="openPage('cart-page')"><i class="fa-solid fa-cart-shopping"></i></button>
             </div>
         </div>
         <div class="catalog" id="catalog-list"></div>
@@ -63,12 +69,11 @@
             <h2>Корзина</h2>
         </div>
         <div id="cart-list"></div>
-        <div id="cart-empty" style="text-align:center; padding:50px; display:none; color:var(--hint);">Корзина пуста</div>
         <div id="cart-footer" style="margin-top: 20px;">
-            <div style="display:flex; justify-content: space-between; margin-bottom: 15px;">
-                <span>Сумма:</span><span id="total-sum" style="font-weight:bold; color:var(--accent);">0 ₴</span>
+            <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
+                <span>Итого:</span><span id="total-sum">0 ₴</span>
             </div>
-            <button class="main-btn" onclick="openPage('order-page')">Перейти к оформлению</button>
+            <button class="add-to-cart-btn" style="padding: 16px;" onclick="openPage('order-page')">Оформить заказ</button>
         </div>
     </div>
 
@@ -77,23 +82,27 @@
             <button class="btn-icon" onclick="openPage('cart-page')"><i class="fa-solid fa-arrow-left"></i></button>
             <h2>Данные заказа</h2>
         </div>
-        <div style="display:flex; flex-direction:column; gap:15px;">
-            <div><label>ФИО</label><input type="text" id="o-name" class="input-field" placeholder="Иванов Иван"></div>
-            <div><label>Телефон</label><input type="tel" id="o-phone" class="input-field" placeholder="380..." oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
-            <div><label>Адрес отделения почты</label><input type="text" id="o-address" class="input-field" placeholder="Город, отделение №"></div>
+        <div style="gap: 15px; display: flex; flex-direction: column;">
+            <input type="text" id="o-name" class="input-field" placeholder="ФИО получателя">
+            <input type="tel" id="o-phone" class="input-field" placeholder="Номер телефона (цифры)" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+            <input type="text" id="o-address" class="input-field" placeholder="Адрес отделения почты">
         </div>
-        <div class="warning-text">⚠️ Относитесь к заполнению данных серьезно. Любая ошибка сделает доставку невозможной.</div>
-        <button class="main-btn" onclick="sendOrder()">Подтвердить заказ</button>
+        <span class="warning-label">⚠️ Пожалуйста, серьезно отнеситесь к заполнению данных, чтобы не было ошибок при доставке.</span>
+        <button class="add-to-cart-btn" style="padding: 16px; margin-top: 20px;" onclick="sendOrder()">Заказать</button>
     </div>
 
-    <div id="admin-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; justify-content:center; align-items:center;">
-        <div style="background:var(--card); padding:20px; border-radius:20px; width:85%; max-width:400px;">
-            <h3 id="modal-title">Товар</h3>
+    <div id="admin-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="text-align: center; margin-bottom: 20px;">Новый товар</h3>
+            <div class="image-upload">
+                <i class="fa-solid fa-camera" id="cam-icon"></i>
+                <img id="preview-img">
+                <input type="file" id="p-img-input" accept="image/*" onchange="previewImage(this)">
+            </div>
             <input type="text" id="p-name" class="input-field" placeholder="Название">
-            <input type="number" id="p-price" class="input-field" placeholder="Цена">
-            <input type="file" id="p-img" style="margin-top:15px; font-size:12px;" accept="image/*">
-            <button class="main-btn" onclick="saveProduct()">Сохранить</button>
-            <button class="main-btn" style="background:#333; margin-top:10px;" onclick="closeModal()">Отмена</button>
+            <input type="number" id="p-price" class="input-field" placeholder="Цена (₴)">
+            <button class="add-to-cart-btn" style="padding: 14px; margin-top: 15px;" onclick="saveProduct()">Сохранить</button>
+            <button class="btn-icon" style="width: 100%; font-size: 14px; color: var(--hint); margin-top: 10px;" onclick="closeModal()">Отмена</button>
         </div>
     </div>
 
@@ -101,16 +110,15 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // --- ВАЖНО: ВПИШИ СВОИ ID СЮДА ---
+        // ВПИШИ СВОИ ID СЮДА
         const ADMIN_IDS = [12345678, 87654321]; 
-        
-        const rawId = tg.initDataUnsafe?.user?.id;
-        document.getElementById('debug-text').innerText = "Ваш ID: " + (rawId || "Не найден (открой через бота!)");
-        
-        const isAdmin = ADMIN_IDS.includes(Number(rawId));
+        const uId = tg.initDataUnsafe?.user?.id;
+        document.getElementById('debug-id').innerText = "ID: " + (uId || "not found");
+
+        const isAdmin = ADMIN_IDS.includes(Number(uId));
         if(isAdmin) document.getElementById('admin-add-btn').style.display = 'block';
 
-        let products = JSON.parse(localStorage.getItem('shop_products')) || [];
+        let products = JSON.parse(localStorage.getItem('saved_products')) || [];
         let cart = {};
         let editingId = null;
 
@@ -126,48 +134,53 @@
                 let p = products.find(x => x.id === id);
                 document.getElementById('p-name').value = p.name;
                 document.getElementById('p-price').value = p.price;
-                document.getElementById('modal-title').innerText = "Редактировать";
+                document.getElementById('preview-img').src = p.img;
+                document.getElementById('preview-img').style.display = 'block';
+                document.getElementById('cam-icon').style.display = 'none';
             } else {
                 document.getElementById('p-name').value = "";
                 document.getElementById('p-price').value = "";
-                document.getElementById('modal-title').innerText = "Новый товар";
+                document.getElementById('preview-img').style.display = 'none';
+                document.getElementById('cam-icon').style.display = 'block';
             }
             document.getElementById('admin-modal').style.display = 'flex';
         }
 
-        function closeModal() { document.getElementById('admin-modal').style.display = 'none'; }
+        function closeModal() { document.getElementById('admin-modal').style.display = 'none'; editingId = null; }
+
+        function previewImage(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    document.getElementById('preview-img').src = e.target.result;
+                    document.getElementById('preview-img').style.display = 'block';
+                    document.getElementById('cam-icon').style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
 
         function saveProduct() {
             const name = document.getElementById('p-name').value;
-            const price = parseInt(document.getElementById('p-price').value);
-            const file = document.getElementById('p-img').files[0];
+            const price = document.getElementById('p-price').value;
+            const img = document.getElementById('preview-img').src;
+            if(!name || !price) return;
 
-            if(!name || !price) return alert("Заполните всё!");
-
-            const done = (imgBase) => {
-                if(editingId) {
-                    let p = products.find(x => x.id === editingId);
-                    p.name = name; p.price = price;
-                    if(imgBase) p.img = imgBase;
-                } else {
-                    products.push({ id: Date.now(), name, price, img: imgBase || '' });
-                }
-                localStorage.setItem('shop_products', JSON.stringify(products));
-                renderCatalog();
-                closeModal();
-            };
-
-            if(file) {
-                let r = new FileReader();
-                r.onload = e => done(e.target.result);
-                r.readAsDataURL(file);
-            } else done(null);
+            if(editingId) {
+                let p = products.find(x => x.id === editingId);
+                p.name = name; p.price = price; p.img = img;
+            } else {
+                products.push({ id: Date.now(), name, price: parseInt(price), img });
+            }
+            localStorage.setItem('saved_products', JSON.stringify(products));
+            renderCatalog();
+            closeModal();
         }
 
         function deleteProduct(id) {
-            if(!confirm("Удалить товар?")) return;
-            products = products.filter(x => x.id !== id);
-            localStorage.setItem('shop_products', JSON.stringify(products));
+            products = products.filter(p => p.id !== id);
+            localStorage.setItem('saved_products', JSON.stringify(products));
             renderCatalog();
         }
 
@@ -179,20 +192,21 @@
                         <button class="admin-btn" onclick="openModal(${p.id})"><i class="fa-solid fa-pen"></i></button>
                         <button class="admin-btn" onclick="deleteProduct(${p.id})"><i class="fa-solid fa-trash"></i></button>
                     </div>
-                    <img src="${p.img || ''}" class="product-img">
-                    <div style="font-size:14px; font-weight:500;">${p.name}</div>
-                    <div style="color:var(--accent); font-weight:bold; margin-bottom:8px;">${p.price} ₴</div>
-                    <button class="main-btn" style="padding:8px; font-size:12px; margin:0;" onclick="addToCart(${p.id})">Добавить</button>
+                    <img src="${p.img}" class="product-img">
+                    <div style="font-size: 14px; margin-top: 8px;">${p.name}</div>
+                    <div style="color: var(--accent); font-weight: bold;">${p.price} ₴</div>
+                    <button class="add-to-cart-btn" onclick="addToCart(${p.id})">В корзину</button>
                 </div>
             `).join('');
         }
 
         function addToCart(id) {
+            const p = products.find(x => x.id === id);
             if(cart[id]) {
-                if(cart[id].qty >= 5) return alert("Лимит на позицию — 5 шт!");
+                if(cart[id].qty >= 5) { alert("Максимум 5 шт одного товара!"); return; }
                 cart[id].qty++;
             } else {
-                cart[id] = { ...products.find(x => x.id === id), qty: 1 };
+                cart[id] = { ...p, qty: 1 };
             }
             tg.HapticFeedback.impactOccurred('medium');
         }
@@ -200,55 +214,31 @@
         function renderCart() {
             const list = document.getElementById('cart-list');
             const items = Object.values(cart);
-            if(items.length === 0) {
-                list.innerHTML = "";
-                document.getElementById('cart-empty').style.display = "block";
-                document.getElementById('cart-footer').style.display = "none";
-                return;
-            }
-            document.getElementById('cart-empty').style.display = "none";
-            document.getElementById('cart-footer').style.display = "block";
-            
             list.innerHTML = items.map(i => `
                 <div class="cart-item">
-                    <img src="${i.img}" style="width:50px; height:50px; border-radius:8px; object-fit:cover;">
-                    <div style="flex:1;">
-                        <div style="font-size:14px;">${i.name}</div>
-                        <div style="font-weight:bold; color:var(--accent);">${i.price * i.qty} ₴</div>
-                    </div>
-                    <div class="qty-control">
-                        <button class="btn-icon" onclick="updateQty(${i.id}, -1)" style="font-size:16px;">-</button>
-                        <span>${i.qty}</span>
-                        <button class="btn-icon" onclick="updateQty(${i.id}, 1)" style="font-size:16px;">+</button>
-                    </div>
+                    <img src="${i.img}" style="width:45px; height:45px; border-radius:8px; object-fit:cover;">
+                    <div style="flex:1; font-size:14px;">${i.name}</div>
+                    <div style="font-weight:bold;">${i.qty} шт</div>
+                    <div style="margin-left:10px;">${i.price * i.qty} ₴</div>
                 </div>
             `).join('');
-            
             const total = items.reduce((s, i) => s + (i.price * i.qty), 0);
             document.getElementById('total-sum').innerText = total + " ₴";
-        }
-
-        function updateQty(id, delta) {
-            cart[id].qty += delta;
-            if(cart[id].qty <= 0) delete cart[id];
-            if(cart[id] && cart[id].qty > 5) cart[id].qty = 5;
-            renderCart();
         }
 
         function sendOrder() {
             const name = document.getElementById('o-name').value;
             const phone = document.getElementById('o-phone').value;
             const addr = document.getElementById('o-address').value;
+            if(!name || phone.length < 10 || !addr) return alert("Заполните данные!");
 
-            if(!name || phone.length < 10 || !addr) return alert("Заполните данные корректно!");
-
-            const order = {
+            const data = {
                 orderId: "#" + Math.floor(1000 + Math.random() * 9000),
-                customer: { name, phone, addr, username: tg.initDataUnsafe?.user?.username || "N/A" },
+                customer: { name, phone, addr, user: tg.initDataUnsafe?.user?.username || "N/A" },
                 items: Object.values(cart),
                 total: document.getElementById('total-sum').innerText
             };
-            tg.sendData(JSON.stringify(order));
+            tg.sendData(JSON.stringify(data));
         }
 
         renderCatalog();
