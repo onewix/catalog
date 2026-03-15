@@ -1,215 +1,287 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Минималистичный Каталог</title>
-
+    <title>Minimal Catalog</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
+    
     <style>
-        /* БАЗОВЫЕ НАСТРОЙКИ */
+        /* МАРКЕР: ПЕРЕМЕННЫЕ ЦВЕТОВ */
         :root {
-            /* Цвета для темной темы по умолчанию (если Telegram не передаст свои) */
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-color: #ffffff;
-            --text-secondary: #aaaaaa;
-            --accent-color: #2aabee;
+            --bg-color: #0f0f0f;
+            --card-bg: #1a1a1a;
+            --text-main: #ffffff;
+            --text-hint: #707070;
+            --accent: #007aff; /* Синий в стиле iOS */
+            --danger: #ff3b30;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
 
         body {
-            /* Используем цвета Telegram, если они есть, иначе наши дефолтные темные */
             background-color: var(--tg-theme-bg-color, var(--bg-color));
-            color: var(--tg-theme-text-color, var(--text-color));
-            padding: 20px;
-            /* Плавное появление всего экрана */
-            animation: fadeInBody 0.6s ease-out;
+            color: var(--tg-theme-text-color, var(--text-main));
+            padding: 16px;
+            padding-bottom: 100px; /* Место для корзины внизу */
+            overflow-x: hidden;
         }
 
-        /* АНИМАЦИИ */
-        @keyframes fadeInBody {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideUpCard {
-            from { 
-                opacity: 0; 
-                transform: translateY(20px); 
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0); 
-            }
-        }
-
-        /* ЗАГОЛОВОК СТРАНИЦЫ */
+        /* МАРКЕР: ШАПКА И КНОПКА + */
         .header {
-            text-align: center;
-            margin-bottom: 24px;
-            font-size: 24px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
 
-        /* СЕТКА КАТАЛОГА */
+        .add-product-btn {
+            background: var(--tg-theme-button-color, var(--accent));
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .add-product-btn:active { transform: scale(0.9); }
+
+        /* МАРКЕР: СЕТКА КАТАЛОГА (КОМПАКТНАЯ) */
         .catalog {
             display: grid;
-            /* Карточки будут автоматически подстраиваться под ширину экрана */
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
+            grid-template-columns: repeat(2, 1fr); /* Два товара в ряд */
+            gap: 12px;
         }
 
-        /* КАРТОЧКА ТОВАРА */
         .product-card {
-            background-color: var(--tg-theme-secondary-bg-color, var(--card-bg));
-            border-radius: 16px;
-            padding: 12px;
+            background: var(--tg-theme-secondary-bg-color, var(--card-bg));
+            border-radius: 12px;
+            padding: 8px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            /* Анимация при нажатии/наведении */
-            transition: transform 0.2s ease, background-color 0.2s ease;
-            /* Начальное состояние для анимации появления */
-            opacity: 0;
-            animation: slideUpCard 0.5s ease-out forwards;
+            animation: fadeIn 0.4s ease forwards;
         }
 
-        /* Плавное уменьшение при клике (эффект нажатия) */
-        .product-card:active {
-            transform: scale(0.96);
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Задержка анимации для каждой карточки, чтобы они появлялись по очереди */
-        .product-card:nth-child(1) { animation-delay: 0.1s; }
-        .product-card:nth-child(2) { animation-delay: 0.2s; }
-        .product-card:nth-child(3) { animation-delay: 0.3s; }
-        .product-card:nth-child(4) { animation-delay: 0.4s; }
-
-        /* ИЗОБРАЖЕНИЕ ТОВАРА (Заглушка) */
-        .product-image {
+        .product-img {
             width: 100%;
-            height: 120px;
-            background-color: #2c2c2c; /* Цвет заглушки */
-            border-radius: 12px;
-            margin-bottom: 12px;
-            /* Если добавите настоящие картинки, они будут красиво обрезаться */
-            object-fit: cover; 
-        }
-
-        /* НАЗВАНИЕ ТОВАРА */
-        .product-title {
-            font-size: 16px;
-            font-weight: 500;
-            text-align: center;
-            margin-bottom: 4px;
-        }
-
-        /* ЦЕНА ТОВАРА */
-        .product-price {
-            font-size: 14px;
-            color: var(--tg-theme-hint-color, var(--text-secondary));
-            margin-bottom: 12px;
-        }
-
-        /* КНОПКА "ДОБАВИТЬ" */
-        .add-btn {
-            background-color: var(--tg-theme-button-color, var(--accent-color));
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
+            height: 100px; /* Уменьшили высоту картинок */
+            object-fit: cover;
             border-radius: 8px;
-            padding: 8px 16px;
-            font-size: 14px;
-            font-weight: 600;
-            width: 100%;
-            cursor: pointer;
-            transition: opacity 0.2s ease;
+            background: #252525;
+            margin-bottom: 8px;
         }
 
-        .add-btn:active {
-            opacity: 0.7;
+        .product-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .product-title { font-size: 14px; font-weight: 500; }
+        .product-price { font-size: 13px; color: var(--tg-theme-hint-color, var(--text-hint)); }
+
+        .buy-btn {
+            margin-top: 8px;
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            border-radius: 6px;
+            padding: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* МАРКЕР: ИНТЕРФЕЙС КОРЗИНЫ */
+        .cart-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 16px;
+            right: 16px;
+            background: var(--accent);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: none; /* Скрыта пока пуста */
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100px); }
+            to { transform: translateY(0); }
+        }
+
+        /* МАРКЕР: МОДАЛЬНОЕ ОКНО СОЗДАНИЯ */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            width: 80%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        input {
+            background: #252525;
+            border: 1px solid #333;
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+            outline: none;
+        }
+
+        .save-btn {
+            background: var(--accent);
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
 
-    <div class="header">Каталог</div>
+    <div class="header">
+        <h2>Каталог</h2>
+        <button class="add-product-btn" onclick="toggleModal(true)">+</button>
+    </div>
 
-    <div class="catalog" id="catalog-container">
-
-        <div class="product-card">
-            <div class="product-image"></div> <div class="product-title">Товар 1</div>
-            <div class="product-price">1 500 ₽</div>
-            <button class="add-btn" onclick="addToCart('Товар 1', 1500)">Добавить</button>
+    <div class="catalog" id="catalog">
         </div>
 
-        <div class="product-card">
-            <div class="product-image"></div>
-            <div class="product-title">Товар 2</div>
-            <div class="product-price">2 300 ₽</div>
-            <button class="add-btn" onclick="addToCart('Товар 2', 2300)">Добавить</button>
-        </div>
+    <div class="cart-bar" id="cart-bar" onclick="sendOrder()">
+        <span>У кошику: <span id="cart-count">0</span></span>
+        <span id="cart-total">0 ₴</span>
+    </div>
 
-        <div class="product-card">
-            <div class="product-image"></div>
-            <div class="product-title">Товар 3</div>
-            <div class="product-price">900 ₽</div>
-            <button class="add-btn" onclick="addToCart('Товар 3', 900)">Добавить</button>
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom:10px">Новий товар</h3>
+            <input type="text" id="p-name" placeholder="Назва">
+            <input type="number" id="p-price" placeholder="Ціна (₴)">
+            <input type="file" id="p-img" accept="image/*">
+            <button class="save-btn" onclick="createNewProduct()">Додати в каталог</button>
+            <button style="background:none; border:none; color:gray; font-size:12px" onclick="toggleModal(false)">Скасувати</button>
         </div>
-
-        <div class="product-card">
-            <div class="product-image"></div>
-            <div class="product-title">Товар 4</div>
-            <div class="product-price">4 100 ₽</div>
-            <button class="add-btn" onclick="addToCart('Товар 4', 4100)">Добавить</button>
-        </div>
-
     </div>
 
     <script>
-        // Инициализация Telegram Web App
         let tg = window.Telegram.WebApp;
-
-        // Расширяем приложение на весь экран телефона
         tg.expand();
 
-        // Сообщаем Telegram, что приложение готово к отображению
-        tg.ready();
-
-        // Переменные для хранения корзины
         let cart = [];
-        let totalPrice = 0;
+        let products = [];
 
-        // МАРКЕР: Функция добавления в корзину
-        function addToCart(itemName, itemPrice) {
-            // Добавляем товар в массив корзины
-            cart.push({name: itemName, price: itemPrice});
-            totalPrice += itemPrice;
-
-            // Включаем вибрацию (тактильный отклик) при нажатии кнопки
-            tg.HapticFeedback.impactOccurred('light');
-
-            // Показываем Главную Кнопку (MainButton) внизу экрана Telegram
-            tg.MainButton.text = "ОФОРМИТЬ (" + totalPrice + " ₴)";
-            tg.MainButton.show();
+        // МАРКЕР: ОТКРЫТЬ/ЗАКРЫТЬ МОДАЛКУ
+        function toggleModal(show) {
+            document.getElementById('modal').style.display = show ? 'flex' : 'none';
         }
 
-        // МАРКЕР: Что происходит при нажатии на Главную Кнопку внизу
-        tg.MainButton.onClick(function() {
-            // Здесь мы можем отправить данные обратно боту
-            let dataToSend = JSON.stringify(cart);
-            tg.sendData(dataToSend);
-            // Закрываем мини-приложение после отправки
+        // МАРКЕР: СОЗДАНИЕ НОВОГО ТОВАРА
+        function createNewProduct() {
+            const name = document.getElementById('p-name').value;
+            const price = document.getElementById('p-price').value;
+            const imgFile = document.getElementById('p-img').files[0];
+            
+            if (!name || !price) return alert("Заповніть поля!");
+
+            // Читаем фото
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const newProduct = {
+                    id: Date.now(),
+                    name: name,
+                    price: parseInt(price),
+                    img: e.target.result || ''
+                };
+                products.push(newProduct);
+                renderCatalog();
+                toggleModal(false);
+                // Очистка полей
+                document.getElementById('p-name').value = '';
+                document.getElementById('p-price').value = '';
+            };
+            
+            if (imgFile) {
+                reader.readAsDataURL(imgFile);
+            } else {
+                reader.onload({target: {result: ''}});
+            }
+        }
+
+        // МАРКЕР: ОТРИСОВКА КАТАЛОГА
+        function renderCatalog() {
+            const container = document.getElementById('catalog');
+            container.innerHTML = '';
+
+            products.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <img src="${p.img || 'https://via.placeholder.com/100'}" class="product-img">
+                    <div class="product-info">
+                        <span class="product-title">${p.name}</span>
+                        <span class="product-price">${p.price} ₴</span>
+                    </div>
+                    <button class="buy-btn" onclick="addToCart(${p.id})">Додати</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // МАРКЕР: ЛОГИКА КОРЗИНЫ
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            cart.push(product);
+            tg.HapticFeedback.impactOccurred('medium');
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const cartBar = document.getElementById('cart-bar');
+            const countEl = document.getElementById('cart-count');
+            const totalEl = document.getElementById('cart-total');
+
+            if (cart.length > 0) {
+                cartBar.style.display = 'flex';
+                countEl.innerText = cart.length;
+                const total = cart.reduce((sum, item) => sum + item.price, 0);
+                totalEl.innerText = total + ' ₴';
+            }
+        }
+
+        function sendOrder() {
+            if (cart.length === 0) return;
+            tg.sendData(JSON.stringify(cart));
             tg.close();
-        });
+        }
     </script>
 </body>
 </html>
