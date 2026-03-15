@@ -9,52 +9,24 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root {
-            --bg-color: #121212;
-            --card-color: #1c1c1e;
-            --accent-color: #ffffff;
-            --text-secondary: #8e8e93;
-        }
-        body { 
-            background-color: var(--bg-color); 
-            color: white; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
+        :root { --bg-color: #121212; --card-color: #1c1c1e; --accent-color: #ffffff; }
+        body { background-color: var(--bg-color); color: white; font-family: -apple-system, system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
         .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); }
-        .input-dark { background: #2c2c2e; border: none; border-radius: 12px; color: white; }
-        .input-dark:focus { ring: 1px solid #444; outline: none; }
-        
-        /* Анимации страниц */
+        .input-dark { background: #2c2c2e; border: none; border-radius: 12px; color: white; width: 100%; padding: 16px; }
         .slide-enter-active, .slide-leave-active { transition: all 0.3s ease; }
         .slide-enter-from { transform: translateX(100%); opacity: 0; }
         .slide-leave-to { transform: translateX(-100%); opacity: 0; }
-
-        .photo-upload {
-            width: 120px;
-            height: 120px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px dashed rgba(255,255,255,0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            overflow: hidden;
-            transition: 0.2s;
-        }
-        .photo-upload:active { transform: scale(0.95); }
-        .photo-preview { width: 100%; height: 100%; object-fit: cover; }
+        .photo-upload { width: 120px; height: 120px; border-radius: 20px; background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: white; color: black; padding: 12px 24px; border-radius: 20px; font-weight: bold; z-index: 100; transition: 0.3s; }
     </style>
 </head>
 <body>
-<div id="app" class="max-w-md mx-auto min-h-screen">
-    
+<div id="app">
+    <div v-if="toast" class="toast">{{ toast }}</div>
+
     <header class="sticky top-0 z-40 p-5 glass flex justify-between items-center">
-        <h1 v-if="view === 'catalog'" class="text-xl font-medium tracking-tight">Store</h1>
-        <button v-else @click="goBack" class="text-white/60 text-lg">
-            <i class="fas fa-chevron-left"></i>
-        </button>
+        <h1 v-if="view === 'catalog'" class="text-xl font-medium">Store</h1>
+        <button v-else @click="goBack" class="text-white/60 text-lg"><i class="fas fa-chevron-left"></i></button>
         
         <div class="flex items-center gap-5">
             <button v-if="isAdmin && view === 'catalog'" @click="view = 'admin'" class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center">
@@ -70,14 +42,13 @@
     <main class="p-5">
         <transition name="slide" mode="out-in">
             <div v-if="view === 'catalog'" key="catalog" class="grid grid-cols-2 gap-4">
-                <div v-for="item in products" :key="item.id" class="bg-[#1c1c1e] rounded-[24px] p-3 flex flex-col">
+                <div v-for="item in products" :key="item.id" class="bg-[#1c1c1e] rounded-[24px] p-3 flex flex-col relative">
+                    <button v-if="isAdmin" @click="deleteProduct(item.id)" class="absolute top-4 right-4 bg-red-500/80 w-7 h-7 rounded-full z-10"><i class="fas fa-trash text-[10px]"></i></button>
                     <img :src="item.image" class="w-full aspect-square object-cover rounded-[18px] mb-3">
                     <h3 class="text-[15px] font-light px-1">{{ item.name }}</h3>
                     <div class="flex justify-between items-center mt-2 px-1">
-                        <span class="font-semibold">{{ item.price }} ₽</span>
-                        <button @click="addToCart(item)" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center active:scale-90 transition-transform">
-                            <i class="fas fa-plus text-[10px]"></i>
-                        </button>
+                        <span class="font-semibold">{{ item.price }} ₴</span>
+                        <button @click="addToCart(item)" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center"><i class="fas fa-plus text-[10px]"></i></button>
                     </div>
                 </div>
             </div>
@@ -89,59 +60,46 @@
                         <img :src="item.image" class="w-16 h-16 rounded-xl object-cover">
                         <div class="flex-1">
                             <h4 class="text-sm font-medium">{{ item.name }}</h4>
-                            <p class="text-white/40 text-xs mt-1">{{ item.price }} ₽</p>
+                            <p class="text-white/40 text-xs mt-1">{{ item.price }} ₴</p>
                         </div>
                         <div class="flex items-center gap-3 bg-black/20 rounded-lg p-1">
                             <button @click="updateQty(item, -1)" class="w-6 h-6"><i class="fas fa-minus text-[10px]"></i></button>
-                            <span class="text-sm w-4 text-center">{{ item.qty }}</span>
+                            <span>{{ item.qty }}</span>
                             <button @click="updateQty(item, 1)" class="w-6 h-6"><i class="fas fa-plus text-[10px]"></i></button>
                         </div>
                     </div>
                     <div class="mt-8 pt-4 border-t border-white/5">
-                        <div class="flex justify-between text-lg font-bold">
-                            <span>Итого:</span>
-                            <span>{{ totalSum }} ₽</span>
-                        </div>
-                        <button @click="view = 'checkout'" class="w-full bg-white text-black py-4 rounded-2xl font-bold mt-6 active:scale-[0.98] transition-transform">
-                            Оформить заказ
-                        </button>
+                        <div class="flex justify-between text-lg font-bold"><span>Итого:</span><span>{{ totalSum }} ₴</span></div>
+                        <button @click="view = 'checkout'" class="w-full bg-white text-black py-4 rounded-2xl font-bold mt-6">Оформить заказ</button>
                     </div>
                 </div>
-                <p v-else class="text-center text-white/30 mt-20">Пока пусто</p>
+                <p v-else class="text-center text-white/30 mt-20">Корзина пуста</p>
             </div>
 
             <div v-else-if="view === 'checkout'" key="checkout" class="space-y-6">
-                <h2 class="text-2xl font-bold">Данные доставки</h2>
+                <h2 class="text-2xl font-bold">Доставка</h2>
                 <div class="space-y-4">
-                    <input v-model="form.name" placeholder="ФИО получателя" class="w-full p-4 input-dark">
-                    <input v-model="form.phone" type="tel" placeholder="Номер телефона" class="w-full p-4 input-dark">
-                    <input v-model="form.address" placeholder="Номер отделения почты" class="w-full p-4 input-dark">
-                    
-                    <div class="bg-white/5 p-4 rounded-xl">
-                        <p class="text-[11px] text-white/40 leading-relaxed uppercase tracking-wider">
-                            Внимание: Проверьте данные. Ошибки в адресе или номере телефона могут привести к невозможности доставки.
-                        </p>
-                    </div>
-                    
-                    <button @click="finishOrder" class="w-full bg-white text-black py-4 rounded-2xl font-bold mt-4">
-                        Подтвердить заказ
-                    </button>
+                    <input v-model="form.name" placeholder="ФИО" class="input-dark">
+                    <input v-model="form.phone" type="tel" placeholder="Телефон" class="input-dark">
+                    <input v-model="form.address" placeholder="Отделение почты" class="input-dark">
+                    <p class="text-[11px] text-white/40 uppercase">Внимание: Проверьте данные. Ошибки ведут к задержкам.</p>
+                    <button @click="finishOrder" class="w-full bg-white text-black py-4 rounded-2xl font-bold">Подтвердить</button>
                 </div>
             </div>
 
             <div v-else-if="view === 'admin'" key="admin" class="space-y-6 flex flex-col items-center">
                 <h2 class="text-xl font-medium">Новый товар</h2>
-                
                 <div class="photo-upload" @click="$refs.fileInput.click()">
-                    <img v-if="newP.image" :src="newP.image" class="photo-preview">
+                    <img v-if="newP.image" :src="newP.image" class="w-full h-full object-cover">
                     <i v-else class="fas fa-camera text-2xl text-white/20"></i>
                 </div>
                 <input type="file" ref="fileInput" class="hidden" @change="handleUpload" accept="image/*">
-
                 <div class="w-full space-y-3">
-                    <input v-model="newP.name" placeholder="Название товара" class="w-full p-4 input-dark">
-                    <input v-model.number="newP.price" type="number" placeholder="Цена в рублях" class="w-full p-4 input-dark">
-                    <button @click="saveProduct" class="w-full bg-white text-black py-4 rounded-2xl font-bold">Добавить в каталог</button>
+                    <input v-model="newP.name" placeholder="Название" class="input-dark">
+                    <input v-model.number="newP.price" type="number" placeholder="Цена в ₴" class="input-dark">
+                    <button @click="saveProduct" :disabled="cooldown > 0" class="w-full bg-white text-black py-4 rounded-2xl font-bold disabled:opacity-50">
+                        {{ cooldown > 0 ? `Подождите ${cooldown}с` : 'Опубликовать' }}
+                    </button>
                 </div>
             </div>
         </transition>
@@ -151,17 +109,12 @@
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
-    tg.backgroundColor = '#121212';
-    tg.headerColor = '#121212';
-
-    const ADMIN_IDS = [5548318726]; // ЗАМЕНИ СВОИМ ID
+    const ADMIN_IDS = [5548318726]; // ТВОЙ ID
 
     Vue.createApp({
         data() {
             return {
-                view: 'catalog',
-                products: [],
-                cart: [],
+                view: 'catalog', products: [], cart: [], toast: '', cooldown: 0,
                 isAdmin: ADMIN_IDS.includes(tg.initDataUnsafe.user?.id),
                 newP: { name: '', price: null, image: '' },
                 form: { name: '', phone: '', address: '' }
@@ -172,27 +125,19 @@
             totalSum() { return this.cart.reduce((a, b) => a + (b.price * b.qty), 0) }
         },
         mounted() {
-            fetch('products.json').then(r => r.json()).then(data => this.products = data).catch(e => console.log('Init products empty'));
+            fetch('products.json?' + Date.now()).then(r => r.json()).then(data => this.products = data).catch(e => console.log('Empty'));
         },
         methods: {
-            goBack() {
-                if (this.view === 'checkout') this.view = 'cart';
-                else this.view = 'catalog';
-            },
+            goBack() { this.view = (this.view === 'checkout') ? 'cart' : 'catalog'; },
+            showToast(msg) { this.toast = msg; setTimeout(() => this.toast = '', 3000); },
             addToCart(item) {
                 const inCart = this.cart.find(i => i.id === item.id);
                 if (inCart) {
-                    if (inCart.qty < 5) {
-                        inCart.qty++;
-                        tg.HapticFeedback.impactOccurred('light');
-                    } else tg.showAlert('Лимит: 5 шт одного товара');
-                } else {
-                    this.cart.push({ ...item, qty: 1 });
-                    tg.HapticFeedback.notificationOccurred('success');
-                }
+                    if (inCart.qty < 5) { inCart.qty++; tg.HapticFeedback.impactOccurred('light'); }
+                    else tg.showAlert('Лимит 5 шт');
+                } else { this.cart.push({ ...item, qty: 1 }); tg.HapticFeedback.notificationOccurred('success'); }
             },
             updateQty(item, delta) {
-                if (delta > 0 && item.qty >= 5) return;
                 item.qty += delta;
                 if (item.qty <= 0) this.cart = this.cart.filter(i => i.id !== item.id);
                 tg.HapticFeedback.selectionChanged();
@@ -208,20 +153,24 @@
                 const p = { ...this.newP, id: Date.now() };
                 this.products.push(p);
                 tg.sendData(JSON.stringify({ type: 'admin', action: 'add', data: p }));
+                this.showToast('Товар выложен!');
                 this.view = 'catalog';
                 this.newP = { name: '', price: null, image: '' };
+                this.cooldown = 5;
+                const timer = setInterval(() => { this.cooldown--; if(this.cooldown <= 0) clearInterval(timer); }, 1000);
+            },
+            deleteProduct(id) {
+                this.products = this.products.filter(p => p.id !== id);
+                tg.sendData(JSON.stringify({ type: 'admin', action: 'delete', data: { id } }));
+                this.showToast('Товар удален');
             },
             finishOrder() {
-                if (!this.form.name || !this.form.phone || !this.form.address) return tg.showAlert('Заполните данные доставки');
-                
-                tg.sendData(JSON.stringify({
-                    type: 'order',
-                    user: this.form,
-                    items: this.cart,
-                    total: this.totalSum
-                }));
+                if (!this.form.name || !this.form.phone || !this.form.address) return tg.showAlert('Заполните поля');
+                const orderData = { type: 'order', user: this.form, items: this.cart, total: this.totalSum };
+                tg.sendData(JSON.stringify(orderData));
                 this.cart = [];
-                tg.close();
+                // Если sendData не закрывает приложение автоматически, вызываем close
+                setTimeout(() => tg.close(), 100);
             }
         }
     }).mount('#app');
