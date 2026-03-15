@@ -10,7 +10,8 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
 # --- КОНФИГУРАЦИЯ ---
 BOT_TOKEN = "8688478869:AAFRqPKq-_3dvfuXoyQztFQTztcHGtKvaS4"
-ADMIN_ID = (5548318726, 1133070247)  # ЗАМЕНИ НА СВОЙ TELEGRAM USER ID
+# Список ID администраторов — можно указывать несколько
+ADMIN_IDS = (5548318726, 1133070247)
 WEBAPP_URL = "https://onewix.github.io/catalog/"  # URL твоего веб-сервера (нужен HTTPS)
 
 logging.basicConfig(level=logging.INFO)
@@ -49,7 +50,7 @@ async def api_get_products(request):
 async def api_save_product(request):
     data = await request.json()
     user_id = int(data.get('user_id', 0))
-    if user_id != ADMIN_ID:
+    if user_id not in ADMIN_IDS:
         return web.json_response({"error": "Forbidden"}, status=403)
 
     product = data.get('product')
@@ -67,7 +68,7 @@ async def api_save_product(request):
 async def api_delete_product(request):
     data = await request.json()
     user_id = int(data.get('user_id', 0))
-    if user_id != ADMIN_ID:
+    if user_id not in ADMIN_IDS:
         return web.json_response({"error": "Forbidden"}, status=403)
 
     prod_id = data.get('id')
@@ -106,7 +107,8 @@ async def api_place_order(request):
     
     # Отправка админу
     try:
-        await bot.send_message(chat_id=ADMIN_ID, text=order_text, parse_mode="HTML")
+        for admin in ADMIN_IDS:
+            await bot.send_message(chat_id=admin, text=order_text, parse_mode="HTML")
     except Exception as e:
         logging.error(f"Не удалось отправить заказ админу: {e}")
         
