@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Premium Store</title>
+    <title>Store Debug</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -11,9 +11,8 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background: var(--bg); color: var(--text); padding: 16px; }
 
-        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page { display: none; }
         .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .btn-icon { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
@@ -22,23 +21,19 @@
         .product-card { background: var(--card); border-radius: 16px; padding: 10px; position: relative; border: 1px solid var(--glass); }
         .product-img { width: 100%; height: 110px; object-fit: cover; border-radius: 10px; background: var(--glass); }
         
-        .admin-controls { position: absolute; top: 5px; right: 5px; display: none; gap: 5px; }
+        /* КНОПКИ АДМИНА */
+        .admin-controls { position: absolute; top: 5px; right: 5px; display: none; gap: 5px; z-index: 5; }
         .admin-btn { background: rgba(0,0,0,0.8); border: none; color: white; padding: 6px; border-radius: 8px; font-size: 12px; }
 
         .input-field { width: 100%; background: var(--glass); border: 1px solid var(--glass); border-radius: 12px; padding: 12px; color: white; outline: none; margin-top: 5px; }
-        .warning-text { opacity: 0.5; font-size: 12px; text-align: center; margin-top: 10px; line-height: 1.4; }
-
         .main-btn { width: 100%; background: var(--accent); border: none; padding: 16px; border-radius: 16px; color: white; font-weight: 600; margin-top: 10px; }
-        
-        .cart-item { display: flex; align-items: center; gap: 10px; background: var(--card); padding: 10px; border-radius: 12px; margin-bottom: 10px; }
-        .qty-badge { background: var(--accent); padding: 2px 6px; border-radius: 6px; font-size: 12px; }
     </style>
 </head>
 <body>
 
     <div id="catalog-page" class="page active">
         <div class="header">
-            <h2>Магазин</h2>
+            <h2 id="main-title" style="font-size: 16px;">Магазин</h2> 
             <div style="display: flex; gap: 15px;">
                 <button id="admin-add-btn" class="btn-icon" style="display:none;" onclick="showModal()"><i class="fa-solid fa-plus"></i></button>
                 <button class="btn-icon" onclick="openPage('cart-page')"><i class="fa-solid fa-cart-shopping"></i></button>
@@ -48,55 +43,19 @@
     </div>
 
     <div id="cart-page" class="page">
-        <div class="header">
-            <button class="btn-icon" onclick="openPage('catalog-page')"><i class="fa-solid fa-arrow-left"></i></button>
-            <h2>Корзина</h2>
-        </div>
+        <div class="header"><button class="btn-icon" onclick="openPage('catalog-page')"><i class="fa-solid fa-arrow-left"></i></button><h2>Корзина</h2></div>
         <div id="cart-list"></div>
-        <div id="cart-footer" style="margin-top: 20px;">
-            <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
-                <span>Итого:</span><span id="total-sum">0 ₴</span>
-            </div>
-            <button class="main-btn" id="checkout-btn" onclick="openPage('order-page')">Оформить заказ</button>
-        </div>
-    </div>
-
-    <div id="order-page" class="page">
-        <div class="header">
-            <button class="btn-icon" onclick="openPage('cart-page')"><i class="fa-solid fa-arrow-left"></i></button>
-            <h2>Оформление</h2>
-        </div>
-        
-        <div style="margin-bottom: 15px;">
-            <label style="font-size: 14px; color: var(--hint);">ФИО получателя</label>
-            <input type="text" id="o-name" class="input-field" placeholder="Иванов Иван Иванович">
-        </div>
-        
-        <div style="margin-bottom: 15px;">
-            <label style="font-size: 14px; color: var(--hint);">Номер телефона (только цифры)</label>
-            <input type="tel" id="o-phone" class="input-field" placeholder="380XXXXXXXXX" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-        </div>
-        
-        <div style="margin-bottom: 15px;">
-            <label style="font-size: 14px; color: var(--hint);">Адрес отделения почты</label>
-            <input type="text" id="o-address" class="input-field" placeholder="Город, № отделения или адрес">
-        </div>
-
-        <div class="warning-text">
-            ⚠️ Пожалуйста, максимально серьезно отнеситесь к заполнению данных. Ошибки в адресе или номере телефона могут привести к задержке или невозможности доставки.
-        </div>
-
-        <button class="main-btn" onclick="finalCheckout()">Подтвердить и отправить</button>
+        <div style="margin-top:20px;"><button class="main-btn" onclick="alert('Данные заказа...')">Оформить</button></div>
     </div>
 
     <div id="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100; justify-content:center; align-items:center;">
         <div style="background:var(--card); padding:20px; border-radius:20px; width:85%;">
-            <h3>Управление товаром</h3>
+            <h3>Новый товар</h3>
             <input type="text" id="p-name" class="input-field" placeholder="Название">
             <input type="number" id="p-price" class="input-field" placeholder="Цена">
             <input type="file" id="p-img" style="margin-top:10px;" accept="image/*">
             <button class="main-btn" onclick="saveProduct()">Сохранить</button>
-            <button class="btn-icon" style="width:100%; margin-top:10px; font-size:14px;" onclick="hideModal()">Отмена</button>
+            <button class="btn-icon" style="width:100%; margin-top:10px;" onclick="hideModal()">Отмена</button>
         </div>
     </div>
 
@@ -104,51 +63,41 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // МАРКЕР: АЙДИ АДМИНОВ
-        const ADMIN_IDS = [12345678, 87654321]; 
-        const userId = tg.initDataUnsafe?.user?.id;
-        const isAdmin = ADMIN_IDS.includes(userId);
+        // 1. ВПИШИТЕ СЮДА ВАШИ ID (как числа)
+        const ADMIN_IDS = [1133070247, 5548318726]; 
 
-        if(isAdmin) document.getElementById('admin-add-btn').style.display = 'block';
+        // 2. ПОЛУЧАЕМ ID ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ
+        const rawUserId = tg.initDataUnsafe?.user?.id;
+        
+        // ВЫВОДИМ ID В ЗАГОЛОВОК ДЛЯ ТЕСТА (потом удалим эту строку)
+        document.getElementById('main-title').innerText = "ID: " + (rawUserId || "не найден");
+
+        // ПРОВЕРКА ПРАВ (приводим к одному типу)
+        const isAdmin = ADMIN_IDS.map(Number).includes(Number(rawUserId));
+
+        if(isAdmin) {
+            document.getElementById('admin-add-btn').style.display = 'block';
+        }
 
         let products = JSON.parse(localStorage.getItem('products')) || [];
-        let cart = {};
-        let editingId = null;
 
         function openPage(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            if(id === 'cart-page') renderCart();
         }
 
-        function showModal(id = null) {
-            editingId = id;
-            if(id) {
-                let p = products.find(x => x.id === id);
-                document.getElementById('p-name').value = p.name;
-                document.getElementById('p-price').value = p.price;
-            }
-            document.getElementById('modal').style.display = 'flex';
-        }
-
-        function hideModal() { 
-            document.getElementById('modal').style.display = 'none';
-            editingId = null;
-        }
+        function showModal() { document.getElementById('modal').style.display = 'flex'; }
+        function hideModal() { document.getElementById('modal').style.display = 'none'; }
 
         function saveProduct() {
             const name = document.getElementById('p-name').value;
-            const price = parseInt(document.getElementById('p-price').value);
+            const price = document.getElementById('p-price').value;
             const file = document.getElementById('p-img').files[0];
 
-            const done = (img) => {
-                if(editingId) {
-                    let p = products.find(x => x.id === editingId);
-                    p.name = name; p.price = price;
-                    if(img) p.img = img;
-                } else {
-                    products.push({ id: Date.now(), name, price, img: img || '' });
-                }
+            if(!name || !price) return alert("Заполните поля");
+
+            const add = (img) => {
+                products.push({ id: Date.now(), name, price, img: img || '' });
                 localStorage.setItem('products', JSON.stringify(products));
                 renderCatalog();
                 hideModal();
@@ -156,9 +105,9 @@
 
             if(file) {
                 let r = new FileReader();
-                r.onload = e => done(e.target.result);
+                r.onload = e => add(e.target.result);
                 r.readAsDataURL(file);
-            } else done(null);
+            } else add(null);
         }
 
         function deleteProduct(id) {
@@ -172,68 +121,13 @@
             list.innerHTML = products.map(p => `
                 <div class="product-card">
                     <div class="admin-controls" style="${isAdmin ? 'display:flex' : ''}">
-                        <button class="admin-btn" onclick="showModal(${p.id})"><i class="fa-solid fa-pen"></i></button>
                         <button class="admin-btn" onclick="deleteProduct(${p.id})"><i class="fa-solid fa-trash"></i></button>
                     </div>
                     <img src="${p.img || ''}" class="product-img">
-                    <div style="font-size:14px; margin: 5px 0;">${p.name}</div>
+                    <div style="font-size:14px; margin-top:5px;">${p.name}</div>
                     <div style="color:var(--accent); font-weight:bold;">${p.price} ₴</div>
-                    <button class="main-btn" style="padding:8px; font-size:12px;" onclick="addToCart(${p.id})">Добавить</button>
                 </div>
             `).join('');
-        }
-
-        function addToCart(id) {
-            if(cart[id]) {
-                if(cart[id].qty >= 5) {
-                    alert("Лимит: не более 5 шт одного товара!");
-                    return;
-                }
-                cart[id].qty++;
-            } else {
-                cart[id] = { ...products.find(x => x.id === id), qty: 1 };
-            }
-            tg.HapticFeedback.impactOccurred('light');
-        }
-
-        function renderCart() {
-            const list = document.getElementById('cart-list');
-            const items = Object.values(cart);
-            list.innerHTML = items.map(i => `
-                <div class="cart-item">
-                    <img src="${i.img}" style="width:40px; height:40px; border-radius:8px;">
-                    <div style="flex:1; font-size:14px;">${i.name}</div>
-                    <div class="qty-badge">${i.qty} шт</div>
-                    <div style="font-weight:bold;">${i.price * i.qty} ₴</div>
-                    <button onclick="changeQty(${i.id}, -1)" style="background:none; border:none; color:red; margin-left:10px;">✕</button>
-                </div>
-            `).join('');
-            const total = items.reduce((s, i) => s + (i.price * i.qty), 0);
-            document.getElementById('total-sum').innerText = total + ' ₴';
-        }
-
-        function changeQty(id, delta) {
-            delete cart[id]; // Для простоты в этой версии кнопка ✕ удаляет позицию
-            renderCart();
-        }
-
-        function finalCheckout() {
-            const name = document.getElementById('o-name').value;
-            const phone = document.getElementById('o-phone').value;
-            const addr = document.getElementById('o-address').value;
-
-            if(!name || phone.length < 10 || !addr) {
-                alert("Пожалуйста, заполните все поля корректно!");
-                return;
-            }
-
-            const orderData = {
-                orderId: "#" + Math.floor(Math.random()*9000 + 1000),
-                customer: { name, phone, addr, user: tg.initDataUnsafe?.user?.username || "no_user" },
-                items: Object.values(cart),
-                total: document.getElementById('total-sum').innerText
-            };
-            tg.sendData(JSON.stringify(orderData));
         }
 
         renderCatalog();
