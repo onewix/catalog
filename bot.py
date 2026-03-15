@@ -7,6 +7,9 @@ from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+import hashlib
+import hmac
+import urllib.parse
 
 # --- КОНФИГУРАЦИЯ ---
 BOT_TOKEN = "8688478869:AAFRqPKq-_3dvfuXoyQztFQTztcHGtKvaS4"
@@ -32,6 +35,50 @@ def save_products(products):
     with open('products.json', 'w', encoding='utf-8') as f:
         json.dump(products, f, ensure_ascii=False, indent=4)
 
+
+    # --- TELEGRAM WEBAPP init_data verification ---
+    def verify_init_data(init_data: str) -> dict | None:
+        """Verify Telegram Web App init_data string and return params dict if valid."""
+        if not init_data:
+            return None
+        try:
+            params = urllib.parse.parse_qs(init_data, keep_blank_values=True)
+            # flatten values
+            flat = {k: v[0] for k, v in params.items()}
+            received_hash = flat.get('hash')
+            if not received_hash:
+                return None
+
+            # build data_check_string from all fields except 'hash'
+            items = []
+            for k in sorted(flat.keys()):
+                if k == 'hash':
+                    continue
+                items.append(f"{k}={flat[k]}")
+            data_check_string = "\n".join(items)
+
+            secret_key = hashlib.sha256(BOT_TOKEN.encode()).digest()
+            computed = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+            if computed != received_hash:
+                return None
+
+            return flat
+        except Exception:
+            return None
+
+    def extract_user_id_from_init_data(init_data: str) -> int | None:
+        params = verify_init_data(init_data)
+        if not params:
+            return None
+        user_val = params.get('user')
+        if not user_val:
+            return None
+        try:
+            user_obj = json.loads(user_val)
+            return int(user_obj.get('id', 0))
+        except Exception:
+            return None
+
 # --- ХЭНДЛЕРЫ БОТА ---
 @dp.message(CommandStart())
 async def start_cmd(message: types.Message):
@@ -49,7 +96,20 @@ async def api_get_products(request):
 
 async def api_save_product(request):
     data = await request.json()
-    user_id = int(data.get('user_id', 0))
+    # Try to verify signed init_data first (preferred)
+    user_id = None
+    init_data = data.get('init_data')
+    if init_data:
+        try:
+            verified = extract_user_id_from_init_data(init_data)
+            if verified:
+                user_id = verified
+        except Exception:
+            user_id = None
+
+    if user_id is None:
+        user_id = int(data.get('user_id', 0))
+
     if user_id not in ADMIN_IDS:
         return web.json_response({"error": "Forbidden"}, status=403)
 
@@ -67,7 +127,20 @@ async def api_save_product(request):
 
 async def api_delete_product(request):
     data = await request.json()
-    user_id = int(data.get('user_id', 0))
+    # Verify init_data if provided
+    user_id = None
+    init_data = data.get('init_data')
+    if init_data:
+        try:
+            verified = extract_user_id_from_init_data(init_data)
+            if verified:
+                user_id = verified
+        except Exception:
+            user_id = None
+
+    if user_id is None:
+        user_id = int(data.get('user_id', 0))
+
     if user_id not in ADMIN_IDS:
         return web.json_response({"error": "Forbidden"}, status=403)
 
@@ -88,12 +161,22 @@ async def api_place_order(request):
     address = data.get('address')
     items = data.get('items', [])
     total = data.get('total', 0)
+
+    # Try to get verified user id (optional) to include in order
+    verified_user = None
+    init_data = data.get('init_data')
+    if init_data:
+        try:
+            verified_user = extract_user_id_from_init_data(init_data)
+        except Exception:
+            verified_user = None
     
     items_text = "\n".join([f"• {item['name']} - {item['qty']} шт. - {item['price'] * item['qty']} ₽" for item in items])
     
     order_text = (
         f"📦 <b>Новый заказ #{order_id}</b>\n\n"
         f"👤 <b>Username:</b> @{username}\n"
+        + (f"🆔 <b>User ID:</b> {verified_user}\n" if verified_user else "")
         f"📝 <b>ФИО:</b> {fullname}\n"
         f"📞 <b>Телефон:</b> {phone}\n"
         f"🏢 <b>Отделение почты:</b> {address}\n\n"
