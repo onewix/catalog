@@ -3,119 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Premium Shop</title>
+    <title>Premium Store</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
     <style>
-        :root {
-            --bg: #0a0a0a;
-            --card: #161618;
-            --accent: #007aff;
-            --text: #ffffff;
-            --hint: #8e8e93;
-            --glass: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
-        }
-
+        :root { --bg: #0a0a0a; --card: #161618; --accent: #007aff; --text: #ffffff; --hint: #8e8e93; --glass: rgba(255, 255, 255, 0.05); }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: var(--bg); color: var(--text); padding: 16px; transition: all 0.3s; }
+        body { background: var(--bg); color: var(--text); padding: 16px; }
 
-        /* МАРКЕР: АНИМАЦИИ ПЕРЕКЛЮЧЕНИЯ СТРАНИЦ */
         .page { display: none; animation: fadeIn 0.3s ease; }
         .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* ШАПКА */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .header-btn { background: none; border: none; color: var(--text); font-size: 20px; cursor: pointer; position: relative; }
+        .btn-icon { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
         
-        .cart-badge {
-            position: absolute; top: -5px; right: -8px; background: var(--accent);
-            font-size: 10px; padding: 2px 6px; border-radius: 10px; display: none;
-        }
-
-        /* ПОИСК И СЕТКА */
-        .search-input { width: 100%; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 12px; padding: 12px; color: white; margin-bottom: 20px; outline: none; }
         .catalog { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .product-card { background: var(--card); border-radius: 16px; padding: 10px; border: 1px solid var(--glass-border); }
-        .product-img { width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; background: var(--glass); }
+        .product-card { background: var(--card); border-radius: 16px; padding: 10px; position: relative; border: 1px solid var(--glass); }
+        .product-img { width: 100%; height: 110px; object-fit: cover; border-radius: 10px; background: var(--glass); }
         
-        /* ЭКРАН КОРЗИНЫ */
-        .cart-item {
-            display: flex; align-items: center; background: var(--card); 
-            padding: 12px; border-radius: 16px; margin-bottom: 10px; gap: 12px;
-            animation: fadeIn 0.3s ease;
-        }
-        .cart-item img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
-        .cart-item-info { flex: 1; }
-        .qty-controls { display: flex; align-items: center; gap: 12px; background: var(--glass); padding: 4px 10px; border-radius: 20px; }
-        .qty-btn { border: none; background: none; color: var(--accent); font-size: 18px; font-weight: bold; cursor: pointer; }
+        .admin-controls { position: absolute; top: 5px; right: 5px; display: none; gap: 5px; }
+        .admin-btn { background: rgba(0,0,0,0.8); border: none; color: white; padding: 6px; border-radius: 8px; font-size: 12px; }
 
-        /* КНОПКА ОФОРМИТЬ */
-        .order-footer {
-            position: fixed; bottom: 0; left: 0; right: 0; padding: 20px;
-            background: linear-gradient(transparent, var(--bg) 20%);
-        }
-        .main-btn {
-            width: 100%; background: var(--accent); border: none; padding: 16px;
-            border-radius: 16px; color: white; font-weight: 600; font-size: 16px;
-        }
+        .input-field { width: 100%; background: var(--glass); border: 1px solid var(--glass); border-radius: 12px; padding: 12px; color: white; outline: none; margin-top: 5px; }
+        .warning-text { opacity: 0.5; font-size: 12px; text-align: center; margin-top: 10px; line-height: 1.4; }
 
-        /* МОДАЛКА ДОБАВЛЕНИЯ */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 85%; display: flex; flex-direction: column; gap: 15px; }
-        .image-upload { width: 100px; height: 100px; border: 2px dashed var(--glass-border); border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto; position: relative; overflow: hidden; background: var(--glass); }
-        #p-img { position: absolute; opacity: 0; width: 100%; height: 100%; }
-        #preview-img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .main-btn { width: 100%; background: var(--accent); border: none; padding: 16px; border-radius: 16px; color: white; font-weight: 600; margin-top: 10px; }
+        
+        .cart-item { display: flex; align-items: center; gap: 10px; background: var(--card); padding: 10px; border-radius: 12px; margin-bottom: 10px; }
+        .qty-badge { background: var(--accent); padding: 2px 6px; border-radius: 6px; font-size: 12px; }
     </style>
 </head>
 <body>
 
     <div id="catalog-page" class="page active">
         <div class="header">
-            <button class="header-btn" onclick="toggleMenu()"><i class="fa-solid fa-bars"></i></button>
-            <h2 style="font-size: 18px;">Магазин</h2>
+            <h2>Магазин</h2>
             <div style="display: flex; gap: 15px;">
-                <button class="header-btn" onclick="toggleModal(true)"><i class="fa-solid fa-plus"></i></button>
-                <button class="header-btn" onclick="openCart()">
-                    <i class="fa-solid fa-cart-shopping"></i>
-                    <span id="cart-badge" class="cart-badge">0</span>
-                </button>
+                <button id="admin-add-btn" class="btn-icon" style="display:none;" onclick="showModal()"><i class="fa-solid fa-plus"></i></button>
+                <button class="btn-icon" onclick="openPage('cart-page')"><i class="fa-solid fa-cart-shopping"></i></button>
             </div>
         </div>
-        <input type="text" class="search-input" placeholder="Поиск товаров..." oninput="search(this.value)">
         <div class="catalog" id="catalog-list"></div>
     </div>
 
     <div id="cart-page" class="page">
         <div class="header">
-            <button class="header-btn" onclick="openCatalog()"><i class="fa-solid fa-arrow-left"></i></button>
-            <h2 style="font-size: 18px;">Корзина</h2>
-            <div style="width: 20px;"></div>
+            <button class="btn-icon" onclick="openPage('catalog-page')"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2>Корзина</h2>
         </div>
-        <div id="cart-items-list"></div>
-        <div class="order-footer">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-weight: 500;">
-                <span>Итого:</span>
-                <span id="total-sum">0 ₴</span>
+        <div id="cart-list"></div>
+        <div id="cart-footer" style="margin-top: 20px;">
+            <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
+                <span>Итого:</span><span id="total-sum">0 ₴</span>
             </div>
-            <button class="main-btn" onclick="checkout()">Оформить заказ</button>
+            <button class="main-btn" id="checkout-btn" onclick="openPage('order-page')">Оформить заказ</button>
         </div>
     </div>
 
-    <div class="modal" id="modal">
-        <div class="modal-content">
-            <h3 style="text-align: center;">Новый товар</h3>
-            <div class="image-upload">
-                <i class="fa-solid fa-camera" id="cam-icon"></i>
-                <img id="preview-img">
-                <input type="file" id="p-img" accept="image/*" onchange="previewFile()">
-            </div>
-            <input type="text" id="p-name" class="search-input" placeholder="Название">
-            <input type="number" id="p-price" class="search-input" placeholder="Цена (₴)">
-            <button class="main-btn" onclick="createProduct()">Создать</button>
-            <button onclick="toggleModal(false)" style="background:none; border:none; color:var(--hint);">Отмена</button>
+    <div id="order-page" class="page">
+        <div class="header">
+            <button class="btn-icon" onclick="openPage('cart-page')"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2>Оформление</h2>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="font-size: 14px; color: var(--hint);">ФИО получателя</label>
+            <input type="text" id="o-name" class="input-field" placeholder="Иванов Иван Иванович">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="font-size: 14px; color: var(--hint);">Номер телефона (только цифры)</label>
+            <input type="tel" id="o-phone" class="input-field" placeholder="380XXXXXXXXX" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="font-size: 14px; color: var(--hint);">Адрес отделения почты</label>
+            <input type="text" id="o-address" class="input-field" placeholder="Город, № отделения или адрес">
+        </div>
+
+        <div class="warning-text">
+            ⚠️ Пожалуйста, максимально серьезно отнеситесь к заполнению данных. Ошибки в адресе или номере телефона могут привести к задержке или невозможности доставки.
+        </div>
+
+        <button class="main-btn" onclick="finalCheckout()">Подтвердить и отправить</button>
+    </div>
+
+    <div id="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100; justify-content:center; align-items:center;">
+        <div style="background:var(--card); padding:20px; border-radius:20px; width:85%;">
+            <h3>Управление товаром</h3>
+            <input type="text" id="p-name" class="input-field" placeholder="Название">
+            <input type="number" id="p-price" class="input-field" placeholder="Цена">
+            <input type="file" id="p-img" style="margin-top:10px;" accept="image/*">
+            <button class="main-btn" onclick="saveProduct()">Сохранить</button>
+            <button class="btn-icon" style="width:100%; margin-top:10px; font-size:14px;" onclick="hideModal()">Отмена</button>
         </div>
     </div>
 
@@ -123,115 +104,139 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        let products = [];
-        let cart = {}; // Храним в формате { id: {item, qty} }
+        // МАРКЕР: АЙДИ АДМИНОВ
+        const ADMIN_IDS = [12345678, 87654321]; 
+        const userId = tg.initDataUnsafe?.user?.id;
+        const isAdmin = ADMIN_IDS.includes(userId);
 
-        function openCart() {
-            document.getElementById('catalog-page').classList.remove('active');
-            document.getElementById('cart-page').classList.add('active');
-            renderCart();
+        if(isAdmin) document.getElementById('admin-add-btn').style.display = 'block';
+
+        let products = JSON.parse(localStorage.getItem('products')) || [];
+        let cart = {};
+        let editingId = null;
+
+        function openPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(id === 'cart-page') renderCart();
         }
 
-        function openCatalog() {
-            document.getElementById('cart-page').classList.remove('active');
-            document.getElementById('catalog-page').classList.add('active');
-        }
-
-        function toggleModal(s) { document.getElementById('modal').style.display = s ? 'flex' : 'none'; }
-
-        function previewFile() {
-            const file = document.getElementById('p-img').files[0];
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                document.getElementById('preview-img').src = reader.result;
-                document.getElementById('preview-img').style.display = 'block';
-                document.getElementById('cam-icon').style.display = 'none';
+        function showModal(id = null) {
+            editingId = id;
+            if(id) {
+                let p = products.find(x => x.id === id);
+                document.getElementById('p-name').value = p.name;
+                document.getElementById('p-price').value = p.price;
             }
-            if (file) reader.readAsDataURL(file);
+            document.getElementById('modal').style.display = 'flex';
         }
 
-        function createProduct() {
+        function hideModal() { 
+            document.getElementById('modal').style.display = 'none';
+            editingId = null;
+        }
+
+        function saveProduct() {
             const name = document.getElementById('p-name').value;
-            const price = document.getElementById('p-price').value;
-            const img = document.getElementById('preview-img').src;
-            if(!name || !price) return;
-            const p = { id: Date.now(), name, price: parseInt(price), img: img.includes('data:') ? img : '' };
-            products.push(p);
-            renderCatalog(products);
-            toggleModal(false);
+            const price = parseInt(document.getElementById('p-price').value);
+            const file = document.getElementById('p-img').files[0];
+
+            const done = (img) => {
+                if(editingId) {
+                    let p = products.find(x => x.id === editingId);
+                    p.name = name; p.price = price;
+                    if(img) p.img = img;
+                } else {
+                    products.push({ id: Date.now(), name, price, img: img || '' });
+                }
+                localStorage.setItem('products', JSON.stringify(products));
+                renderCatalog();
+                hideModal();
+            };
+
+            if(file) {
+                let r = new FileReader();
+                r.onload = e => done(e.target.result);
+                r.readAsDataURL(file);
+            } else done(null);
         }
 
-        function renderCatalog(list) {
-            const c = document.getElementById('catalog-list');
-            c.innerHTML = list.map(p => `
+        function deleteProduct(id) {
+            products = products.filter(x => x.id !== id);
+            localStorage.setItem('products', JSON.stringify(products));
+            renderCatalog();
+        }
+
+        function renderCatalog() {
+            const list = document.getElementById('catalog-list');
+            list.innerHTML = products.map(p => `
                 <div class="product-card">
-                    <img src="${p.img || 'https://via.placeholder.com/150'}" class="product-img">
-                    <div style="font-size: 14px; font-weight: 500;">${p.name}</div>
-                    <div style="color: var(--accent); margin: 4px 0;">${p.price} ₴</div>
-                    <button class="main-btn" style="padding: 8px; font-size: 12px;" onclick="addToCart(${p.id})">Добавить</button>
+                    <div class="admin-controls" style="${isAdmin ? 'display:flex' : ''}">
+                        <button class="admin-btn" onclick="showModal(${p.id})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="admin-btn" onclick="deleteProduct(${p.id})"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <img src="${p.img || ''}" class="product-img">
+                    <div style="font-size:14px; margin: 5px 0;">${p.name}</div>
+                    <div style="color:var(--accent); font-weight:bold;">${p.price} ₴</div>
+                    <button class="main-btn" style="padding:8px; font-size:12px;" onclick="addToCart(${p.id})">Добавить</button>
                 </div>
             `).join('');
         }
 
         function addToCart(id) {
-            const p = products.find(x => x.id === id);
-            if(cart[id]) cart[id].qty++;
-            else cart[id] = { ...p, qty: 1 };
+            if(cart[id]) {
+                if(cart[id].qty >= 5) {
+                    alert("Лимит: не более 5 шт одного товара!");
+                    return;
+                }
+                cart[id].qty++;
+            } else {
+                cart[id] = { ...products.find(x => x.id === id), qty: 1 };
+            }
             tg.HapticFeedback.impactOccurred('light');
-            updateBadge();
-        }
-
-        function updateBadge() {
-            const count = Object.values(cart).reduce((s, i) => s + i.qty, 0);
-            const b = document.getElementById('cart-badge');
-            b.innerText = count;
-            b.style.display = count > 0 ? 'block' : 'none';
         }
 
         function renderCart() {
-            const list = document.getElementById('cart-items-list');
+            const list = document.getElementById('cart-list');
             const items = Object.values(cart);
-            if(items.length === 0) {
-                list.innerHTML = '<p style="text-align:center; color:var(--hint); margin-top:50px;">Корзина пуста</p>';
-                document.getElementById('total-sum').innerText = '0 ₴';
-                return;
-            }
             list.innerHTML = items.map(i => `
                 <div class="cart-item">
-                    <img src="${i.img || 'https://via.placeholder.com/150'}">
-                    <div class="cart-item-info">
-                        <div style="font-size: 14px;">${i.name}</div>
-                        <div style="color: var(--accent); font-size: 13px;">${i.price} ₴</div>
-                    </div>
-                    <div class="qty-controls">
-                        <button class="qty-btn" onclick="updateQty(${i.id}, -1)">-</button>
-                        <span>${i.qty}</span>
-                        <button class="qty-btn" onclick="updateQty(${i.id}, 1)">+</button>
-                    </div>
+                    <img src="${i.img}" style="width:40px; height:40px; border-radius:8px;">
+                    <div style="flex:1; font-size:14px;">${i.name}</div>
+                    <div class="qty-badge">${i.qty} шт</div>
+                    <div style="font-weight:bold;">${i.price * i.qty} ₴</div>
+                    <button onclick="changeQty(${i.id}, -1)" style="background:none; border:none; color:red; margin-left:10px;">✕</button>
                 </div>
             `).join('');
             const total = items.reduce((s, i) => s + (i.price * i.qty), 0);
             document.getElementById('total-sum').innerText = total + ' ₴';
         }
 
-        function updateQty(id, delta) {
-            cart[id].qty += delta;
-            if(cart[id].qty <= 0) delete cart[id];
+        function changeQty(id, delta) {
+            delete cart[id]; // Для простоты в этой версии кнопка ✕ удаляет позицию
             renderCart();
-            updateBadge();
         }
 
-        function checkout() {
-            const items = Object.values(cart);
-            if(items.length === 0) return;
-            // Отправляем данные боту
-            tg.sendData(JSON.stringify(items));
+        function finalCheckout() {
+            const name = document.getElementById('o-name').value;
+            const phone = document.getElementById('o-phone').value;
+            const addr = document.getElementById('o-address').value;
+
+            if(!name || phone.length < 10 || !addr) {
+                alert("Пожалуйста, заполните все поля корректно!");
+                return;
+            }
+
+            const orderData = {
+                orderId: "#" + Math.floor(Math.random()*9000 + 1000),
+                customer: { name, phone, addr, user: tg.initDataUnsafe?.user?.username || "no_user" },
+                items: Object.values(cart),
+                total: document.getElementById('total-sum').innerText
+            };
+            tg.sendData(JSON.stringify(orderData));
         }
 
-        function search(q) {
-            const f = products.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
-            renderCatalog(f);
-        }
+        renderCatalog();
     </script>
 </body>
 </html>
