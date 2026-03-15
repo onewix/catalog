@@ -3,93 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TG Shop</title>
+    <title>Premium Shop</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: var(--tg-theme-bg-color, #1a1a1a); color: var(--tg-theme-text-color, #ffffff); font-family: sans-serif; }
-        .card { background: var(--tg-theme-secondary-bg-color, #242424); border-radius: 12px; }
-        .btn-primary { background: var(--tg-theme-button-color, #2481cc); color: var(--tg-theme-button-text-color, #ffffff); }
-        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
-        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        :root {
+            --bg-color: #121212;
+            --card-color: #1c1c1e;
+            --accent-color: #ffffff;
+            --text-secondary: #8e8e93;
+        }
+        body { 
+            background-color: var(--bg-color); 
+            color: white; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); }
+        .input-dark { background: #2c2c2e; border: none; border-radius: 12px; color: white; }
+        .input-dark:focus { ring: 1px solid #444; outline: none; }
+        
+        /* Анимации страниц */
+        .slide-enter-active, .slide-leave-active { transition: all 0.3s ease; }
+        .slide-enter-from { transform: translateX(100%); opacity: 0; }
+        .slide-leave-to { transform: translateX(-100%); opacity: 0; }
+
+        .photo-upload {
+            width: 120px;
+            height: 120px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px dashed rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+            transition: 0.2s;
+        }
+        .photo-upload:active { transform: scale(0.95); }
+        .photo-preview { width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body>
-<div id="app" class="p-4 pb-24">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">Магазин</h1>
-        <div class="flex gap-4">
-            <button v-if="isAdmin" @click="showAdmin = true" class="text-yellow-500 text-xl"><i class="fas fa-tools"></i></button>
-            <button @click="view = 'cart'" class="relative text-xl">
-                <i class="fas fa-shopping-cart"></i>
-                <span v-if="cartCount" class="absolute -top-2 -right-2 bg-red-500 text-xs rounded-full px-1.5">{{ cartCount }}</span>
+<div id="app" class="max-w-md mx-auto min-h-screen">
+    
+    <header class="sticky top-0 z-40 p-5 glass flex justify-between items-center">
+        <h1 v-if="view === 'catalog'" class="text-xl font-medium tracking-tight">Store</h1>
+        <button v-else @click="goBack" class="text-white/60 text-lg">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <div class="flex items-center gap-5">
+            <button v-if="isAdmin && view === 'catalog'" @click="view = 'admin'" class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center">
+                <i class="fas fa-plus text-xs"></i>
+            </button>
+            <button @click="view = 'cart'" class="relative">
+                <i class="fas fa-shopping-bag text-xl"></i>
+                <span v-if="cartCount" class="absolute -top-1.5 -right-2 bg-white text-black text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{{ cartCount }}</span>
             </button>
         </div>
-    </div>
+    </header>
 
-    <div v-if="view === 'catalog'" class="grid grid-cols-2 gap-4">
-        <div v-for="item in products" :key="item.id" class="card p-3 flex flex-col">
-            <img :src="item.image" class="w-full h-32 object-cover rounded-lg mb-2">
-            <h3 class="font-semibold text-sm mb-1">{{ item.name }}</h3>
-            <p class="text-blue-400 font-bold mb-2">{{ item.price }} ₽</p>
-            <button @click="addToCart(item)" class="btn-primary py-2 rounded-lg text-xs mt-auto">
-                Добавить
-            </button>
-        </div>
-    </div>
+    <main class="p-5">
+        <transition name="slide" mode="out-in">
+            <div v-if="view === 'catalog'" key="catalog" class="grid grid-cols-2 gap-4">
+                <div v-for="item in products" :key="item.id" class="bg-[#1c1c1e] rounded-[24px] p-3 flex flex-col">
+                    <img :src="item.image" class="w-full aspect-square object-cover rounded-[18px] mb-3">
+                    <h3 class="text-[15px] font-light px-1">{{ item.name }}</h3>
+                    <div class="flex justify-between items-center mt-2 px-1">
+                        <span class="font-semibold">{{ item.price }} ₽</span>
+                        <button @click="addToCart(item)" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center active:scale-90 transition-transform">
+                            <i class="fas fa-plus text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-    <div v-if="view === 'cart'" class="space-y-4">
-        <button @click="view = 'catalog'" class="mb-4 text-blue-400"><i class="fas fa-arrow-left"></i> Назад</button>
-        <div v-for="item in cart" :key="item.id" class="card p-4 flex justify-between items-center">
-            <div>
-                <h4 class="font-bold">{{ item.name }}</h4>
-                <p>{{ item.price }} ₽ x {{ item.qty }}</p>
+            <div v-else-if="view === 'cart'" key="cart">
+                <h2 class="text-2xl font-bold mb-6">Корзина</h2>
+                <div v-if="cart.length" class="space-y-4">
+                    <div v-for="item in cart" :key="item.id" class="flex items-center gap-4 bg-[#1c1c1e] p-3 rounded-2xl">
+                        <img :src="item.image" class="w-16 h-16 rounded-xl object-cover">
+                        <div class="flex-1">
+                            <h4 class="text-sm font-medium">{{ item.name }}</h4>
+                            <p class="text-white/40 text-xs mt-1">{{ item.price }} ₽</p>
+                        </div>
+                        <div class="flex items-center gap-3 bg-black/20 rounded-lg p-1">
+                            <button @click="updateQty(item, -1)" class="w-6 h-6"><i class="fas fa-minus text-[10px]"></i></button>
+                            <span class="text-sm w-4 text-center">{{ item.qty }}</span>
+                            <button @click="updateQty(item, 1)" class="w-6 h-6"><i class="fas fa-plus text-[10px]"></i></button>
+                        </div>
+                    </div>
+                    <div class="mt-8 pt-4 border-t border-white/5">
+                        <div class="flex justify-between text-lg font-bold">
+                            <span>Итого:</span>
+                            <span>{{ totalSum }} ₽</span>
+                        </div>
+                        <button @click="view = 'checkout'" class="w-full bg-white text-black py-4 rounded-2xl font-bold mt-6 active:scale-[0.98] transition-transform">
+                            Оформить заказ
+                        </button>
+                    </div>
+                </div>
+                <p v-else class="text-center text-white/30 mt-20">Пока пусто</p>
             </div>
-            <div class="flex items-center gap-3">
-                <button @click="updateQty(item, -1)" class="p-2"><i class="fas fa-minus"></i></button>
-                <span>{{ item.qty }}</span>
-                <button @click="updateQty(item, 1)" class="p-2"><i class="fas fa-plus"></i></button>
-            </div>
-        </div>
-        <div v-if="cart.length > 0" class="mt-6">
-            <h3 class="text-xl font-bold mb-4">Итого: {{ totalSum }} ₽</h3>
-            <div class="space-y-3">
-                <input v-model="form.name" placeholder="ФИО получателя" class="w-full p-3 rounded-lg bg-gray-800 border-none">
-                <input v-model="form.phone" type="tel" placeholder="Телефон (только цифры)" class="w-full p-3 rounded-lg bg-gray-800 border-none">
-                <input v-model="form.address" placeholder="Адрес отделения почты" class="w-full p-3 rounded-lg bg-gray-800 border-none">
-                <p class="text-xs text-white/50 italic">Пожалуйста, внимательно проверяйте данные. Ошибки могут привести к невозможности доставки.</p>
-                <button @click="checkout" class="btn-primary w-full py-4 rounded-xl font-bold">Оформить заказ</button>
-            </div>
-        </div>
-        <p v-else class="text-center opacity-50">Корзина пуста</p>
-    </div>
 
-    <div v-if="showAdmin" class="fixed inset-0 bg-black/90 z-50 p-6 overflow-y-auto">
-        <div class="flex justify-between mb-6">
-            <h2 class="text-xl font-bold">Админ-панель</h2>
-            <button @click="showAdmin = false"><i class="fas fa-times text-2xl"></i></button>
-        </div>
-        <div class="card p-4 mb-6">
-            <h3 class="mb-2">Новый товар</h3>
-            <input v-model="newP.name" placeholder="Название" class="w-full mb-2 p-2 rounded bg-gray-700">
-            <input v-model.number="newP.price" type="number" placeholder="Цена" class="w-full mb-2 p-2 rounded bg-gray-700">
-            <input type="file" @change="handleUpload" class="text-xs mb-4">
-            <button @click="saveProduct" class="btn-primary w-full py-2 rounded">Сохранить</button>
-        </div>
-        <div v-for="p in products" :key="p.id" class="flex justify-between items-center border-b border-white/10 py-2">
-            <span>{{ p.name }}</span>
-            <button @click="deleteProduct(p.id)" class="text-red-500"><i class="fas fa-trash"></i></button>
-        </div>
-    </div>
+            <div v-else-if="view === 'checkout'" key="checkout" class="space-y-6">
+                <h2 class="text-2xl font-bold">Данные доставки</h2>
+                <div class="space-y-4">
+                    <input v-model="form.name" placeholder="ФИО получателя" class="w-full p-4 input-dark">
+                    <input v-model="form.phone" type="tel" placeholder="Номер телефона" class="w-full p-4 input-dark">
+                    <input v-model="form.address" placeholder="Номер отделения почты" class="w-full p-4 input-dark">
+                    
+                    <div class="bg-white/5 p-4 rounded-xl">
+                        <p class="text-[11px] text-white/40 leading-relaxed uppercase tracking-wider">
+                            Внимание: Проверьте данные. Ошибки в адресе или номере телефона могут привести к невозможности доставки.
+                        </p>
+                    </div>
+                    
+                    <button @click="finishOrder" class="w-full bg-white text-black py-4 rounded-2xl font-bold mt-4">
+                        Подтвердить заказ
+                    </button>
+                </div>
+            </div>
+
+            <div v-else-if="view === 'admin'" key="admin" class="space-y-6 flex flex-col items-center">
+                <h2 class="text-xl font-medium">Новый товар</h2>
+                
+                <div class="photo-upload" @click="$refs.fileInput.click()">
+                    <img v-if="newP.image" :src="newP.image" class="photo-preview">
+                    <i v-else class="fas fa-camera text-2xl text-white/20"></i>
+                </div>
+                <input type="file" ref="fileInput" class="hidden" @change="handleUpload" accept="image/*">
+
+                <div class="w-full space-y-3">
+                    <input v-model="newP.name" placeholder="Название товара" class="w-full p-4 input-dark">
+                    <input v-model.number="newP.price" type="number" placeholder="Цена в рублях" class="w-full p-4 input-dark">
+                    <button @click="saveProduct" class="w-full bg-white text-black py-4 rounded-2xl font-bold">Добавить в каталог</button>
+                </div>
+            </div>
+        </transition>
+    </main>
 </div>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
+    tg.backgroundColor = '#121212';
+    tg.headerColor = '#121212';
 
-    const ADMIN_IDS = [5548318726]; // ЗАМЕНИТЕ НА ВАШ ID
+    const ADMIN_IDS = [12345678]; // ЗАМЕНИ СВОИМ ID
 
     Vue.createApp({
         data() {
@@ -97,7 +162,6 @@
                 view: 'catalog',
                 products: [],
                 cart: [],
-                showAdmin: false,
                 isAdmin: ADMIN_IDS.includes(tg.initDataUnsafe.user?.id),
                 newP: { name: '', price: null, image: '' },
                 form: { name: '', phone: '', address: '' }
@@ -108,15 +172,12 @@
             totalSum() { return this.cart.reduce((a, b) => a + (b.price * b.qty), 0) }
         },
         mounted() {
-            // В GitHub Pages без бэкенда мы эмулируем загрузку.
-            // Бот при открытии может передать данные через URL или мы можем сделать fetch
-            this.loadProducts();
+            fetch('products.json').then(r => r.json()).then(data => this.products = data).catch(e => console.log('Init products empty'));
         },
         methods: {
-            loadProducts() {
-                // В идеале: fetch('products.json')
-                // Для демо примера загрузим пустой массив или дефолт
-                fetch('products.json').then(r => r.json()).then(data => this.products = data).catch(e => console.log('Wait for bot data'));
+            goBack() {
+                if (this.view === 'checkout') this.view = 'cart';
+                else this.view = 'catalog';
             },
             addToCart(item) {
                 const inCart = this.cart.find(i => i.id === item.id);
@@ -124,9 +185,7 @@
                     if (inCart.qty < 5) {
                         inCart.qty++;
                         tg.HapticFeedback.impactOccurred('light');
-                    } else {
-                        tg.showAlert('Максимум 5 единиц одного товара!');
-                    }
+                    } else tg.showAlert('Лимит: 5 шт одного товара');
                 } else {
                     this.cart.push({ ...item, qty: 1 });
                     tg.HapticFeedback.notificationOccurred('success');
@@ -145,30 +204,22 @@
                 reader.readAsDataURL(file);
             },
             saveProduct() {
+                if (!this.newP.name || !this.newP.price || !this.newP.image) return tg.showAlert('Заполните всё');
                 const p = { ...this.newP, id: Date.now() };
                 this.products.push(p);
-                this.sendAdminAction('add', p);
+                tg.sendData(JSON.stringify({ type: 'admin', action: 'add', data: p }));
+                this.view = 'catalog';
                 this.newP = { name: '', price: null, image: '' };
             },
-            deleteProduct(id) {
-                this.products = this.products.filter(p => p.id !== id);
-                this.sendAdminAction('delete', { id });
-            },
-            sendAdminAction(action, data) {
-                // Отправляем команду боту на изменение JSON
-                tg.sendData(JSON.stringify({ type: 'admin', action, data }));
-            },
-            checkout() {
-                if (!this.form.name || !this.form.phone || !this.form.address) {
-                    return tg.showAlert('Заполните все поля!');
-                }
-                const orderData = {
+            finishOrder() {
+                if (!this.form.name || !this.form.phone || !this.form.address) return tg.showAlert('Заполните данные доставки');
+                
+                tg.sendData(JSON.stringify({
                     type: 'order',
                     user: this.form,
                     items: this.cart,
                     total: this.totalSum
-                };
-                tg.sendData(JSON.stringify(orderData));
+                }));
                 this.cart = [];
                 tg.close();
             }
