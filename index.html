@@ -238,7 +238,9 @@
         
         async function fetchProducts() {
             try {
-                const res = await fetch(`${API_URL}/products`);
+                const res = await fetch(`${API_URL}/products`, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' } // Обходим защиту ngrok
+                });
                 products = await res.json();
                 renderCatalog();
             } catch (err) {
@@ -264,7 +266,10 @@
             try {
                 await fetch(url, {
                     method: method,
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true' // Обходим защиту ngrok
+                    },
                     body: JSON.stringify(payload)
                 });
                 openPage('catalog');
@@ -277,7 +282,10 @@
             haptic();
             if(!confirm("Ви впевнені, що хочете видалити товар?")) return;
             try {
-                await fetch(`${API_URL}/products/${id}`, { method: 'DELETE' });
+                await fetch(`${API_URL}/products/${id}`, { 
+                    method: 'DELETE',
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
                 fetchProducts();
             } catch(e) {
                 tg.showAlert("Помилка видалення");
