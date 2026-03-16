@@ -1,179 +1,457 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Premium Shop</title>
+    <title>Преміум Магазин</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg-color: #121212; --card-color: #1c1c1e; --accent-color: #ffffff; }
-        body { background-color: var(--bg-color); color: white; font-family: -apple-system, system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); }
-        .input-dark { background: #2c2c2e; border: none; border-radius: 12px; color: white; width: 100%; padding: 16px; }
-        .slide-enter-active, .slide-leave-active { transition: all 0.3s ease; }
-        .slide-enter-from { transform: translateX(100%); opacity: 0; }
-        .slide-leave-to { transform: translateX(-100%); opacity: 0; }
-        .photo-upload { width: 120px; height: 120px; border-radius: 20px; background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: white; color: black; padding: 12px 24px; border-radius: 20px; font-weight: bold; z-index: 100; transition: 0.3s; }
+        :root {
+            --bg-color: #0d0d0d;
+            --text-color: #ffffff;
+            --accent-color: #ffffff;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --danger-color: #ff3b30;
+            --disabled-color: rgba(255, 255, 255, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding-bottom: 80px;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Glassmorphism Classes */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* Header */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 0 0 16px 16px;
+        }
+        
+        .cart-icon { position: relative; cursor: pointer; }
+        .cart-badge {
+            position: absolute; top: -5px; right: -10px;
+            background: var(--text-color); color: var(--bg-color);
+            font-size: 12px; font-weight: bold;
+            padding: 2px 6px; border-radius: 10px;
+        }
+
+        /* Page Container */
+        .page { display: none; padding: 20px; animation: fadeIn 0.4s ease; }
+        .page.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Catalog Layout */
+        .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        
+        .product-card {
+            padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center;
+        }
+        .product-img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; margin-bottom: 12px; }
+        .product-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .product-price { font-size: 14px; opacity: 0.8; margin-bottom: 12px; }
+        
+        button {
+            width: 100%; padding: 10px; border: none; border-radius: 12px;
+            background: var(--text-color); color: var(--bg-color);
+            font-weight: 600; cursor: pointer; transition: 0.2s ease;
+        }
+        button:active { transform: scale(0.96); }
+        button:disabled { background: var(--disabled-color); cursor: not-allowed; }
+        button.danger { background: var(--danger-color); color: white; }
+
+        /* Cart View */
+        .cart-item {
+            display: flex; align-items: center; padding: 12px; margin-bottom: 12px; gap: 12px;
+        }
+        .cart-item-img { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; }
+        .cart-item-info { flex: 1; }
+        .cart-controls { display: flex; align-items: center; gap: 12px; }
+        .cart-controls button { width: 30px; height: 30px; padding: 0; font-size: 18px; border-radius: 8px; }
+        
+        .cart-total { margin-top: 20px; font-size: 20px; font-weight: bold; text-align: right; }
+        .contact-info {
+            margin-top: 40px; text-align: center; padding: 20px;
+            font-size: 14px; line-height: 1.5; color: rgba(255,255,255,0.7);
+        }
+        .contact-info a { color: #fff; font-weight: bold; text-decoration: none; }
+
+        /* Admin FAB & Form */
+        .admin-fab {
+            display: none; position: fixed; bottom: 30px; right: 30px;
+            width: 56px; height: 56px; border-radius: 28px;
+            background: var(--text-color); color: var(--bg-color);
+            font-size: 28px; line-height: 56px; text-align: center;
+            box-shadow: 0 4px 12px rgba(255,255,255,0.3); z-index: 1000; cursor: pointer;
+        }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 8px; font-size: 14px; opacity: 0.8; }
+        .form-group input {
+            width: 100%; padding: 12px; background: rgba(0,0,0,0.2);
+            border: 1px solid var(--glass-border); border-radius: 12px; color: white; outline: none;
+        }
+        
+        /* Image Upload UI */
+        .image-upload-wrapper {
+            width: 100%; aspect-ratio: 1; border-radius: 16px;
+            border: 2px dashed var(--glass-border); display: flex;
+            justify-content: center; align-items: center; cursor: pointer;
+            overflow: hidden; position: relative; background: rgba(0,0,0,0.2);
+        }
+        .image-upload-wrapper svg { width: 40px; height: 40px; opacity: 0.5; }
+        .image-upload-wrapper img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+        #file-input { display: none; }
+
+        /* Back Button */
+        .back-btn { background: transparent; border: 1px solid var(--text-color); color: var(--text-color); margin-bottom: 20px;}
+        .admin-controls { margin-top: 10px; display: flex; gap: 8px;}
+        .admin-controls button { font-size: 12px; padding: 6px; }
+
     </style>
 </head>
 <body>
-<div id="app">
-    <div v-if="toast" class="toast">{{ toast }}</div>
 
-    <header class="sticky top-0 z-40 p-5 glass flex justify-between items-center">
-        <h1 v-if="view === 'catalog'" class="text-xl font-medium">Store</h1>
-        <button v-else @click="goBack" class="text-white/60 text-lg"><i class="fas fa-chevron-left"></i></button>
-        
-        <div class="flex items-center gap-5">
-            <button v-if="isAdmin && view === 'catalog'" @click="view = 'admin'" class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center">
-                <i class="fas fa-plus text-xs"></i>
-            </button>
-            <button @click="view = 'cart'" class="relative">
-                <i class="fas fa-shopping-bag text-xl"></i>
-                <span v-if="cartCount" class="absolute -top-1.5 -right-2 bg-white text-black text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{{ cartCount }}</span>
-            </button>
+    <header class="glass">
+        <h2 id="header-title">Каталог</h2>
+        <div class="cart-icon" onclick="openPage('cart')">
+            🛒 <span class="cart-badge" id="cart-count">0</span>
         </div>
     </header>
 
-    <main class="p-5">
-        <transition name="slide" mode="out-in">
-            <div v-if="view === 'catalog'" key="catalog" class="grid grid-cols-2 gap-4">
-                <div v-for="item in products" :key="item.id" class="bg-[#1c1c1e] rounded-[24px] p-3 flex flex-col relative">
-                    <button v-if="isAdmin" @click="deleteProduct(item.id)" class="absolute top-4 right-4 bg-red-500/80 w-7 h-7 rounded-full z-10"><i class="fas fa-trash text-[10px]"></i></button>
-                    <img :src="item.image" class="w-full aspect-square object-cover rounded-[18px] mb-3">
-                    <h3 class="text-[15px] font-light px-1">{{ item.name }}</h3>
-                    <div class="flex justify-between items-center mt-2 px-1">
-                        <span class="font-semibold">{{ item.price }} ₴</span>
-                        <button @click="addToCart(item)" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center"><i class="fas fa-plus text-[10px]"></i></button>
-                    </div>
-                </div>
+    <div id="catalog" class="page active">
+        <div class="products-grid" id="products-container">
             </div>
+    </div>
 
-            <div v-else-if="view === 'cart'" key="cart">
-                <h2 class="text-2xl font-bold mb-6">Корзина</h2>
-                <div v-if="cart.length" class="space-y-4">
-                    <div v-for="item in cart" :key="item.id" class="flex items-center gap-4 bg-[#1c1c1e] p-3 rounded-2xl">
-                        <img :src="item.image" class="w-16 h-16 rounded-xl object-cover">
-                        <div class="flex-1">
-                            <h4 class="text-sm font-medium">{{ item.name }}</h4>
-                            <p class="text-white/40 text-xs mt-1">{{ item.price }} ₴</p>
-                        </div>
-                        <div class="flex items-center gap-3 bg-black/20 rounded-lg p-1">
-                            <button @click="updateQty(item, -1)" class="w-6 h-6"><i class="fas fa-minus text-[10px]"></i></button>
-                            <span>{{ item.qty }}</span>
-                            <button @click="updateQty(item, 1)" class="w-6 h-6"><i class="fas fa-plus text-[10px]"></i></button>
-                        </div>
-                    </div>
-                    <div class="mt-8 pt-4 border-t border-white/5">
-                        <div class="flex justify-between text-lg font-bold"><span>Итого:</span><span>{{ totalSum }} ₴</span></div>
-                        <button @click="view = 'checkout'" class="w-full bg-white text-black py-4 rounded-2xl font-bold mt-6">Оформить заказ</button>
-                    </div>
-                </div>
-                <p v-else class="text-center text-white/30 mt-20">Корзина пуста</p>
+    <div id="cart" class="page">
+        <button class="back-btn" onclick="openPage('catalog')">← Назад до каталогу</button>
+        <div id="cart-container">
             </div>
+        <div class="cart-total" id="cart-total-price">Разом: 0 ₴</div>
+        
+        <div class="glass contact-info">
+            Для оплати та оформлення замовлення зверніться у Telegram:<br>
+            <a href="https://t.me/jess1k_energyy" target="_blank">@jess1k_energyy</a>
+        </div>
+    </div>
 
-            <div v-else-if="view === 'checkout'" key="checkout" class="space-y-6">
-                <h2 class="text-2xl font-bold">Доставка</h2>
-                <div class="space-y-4">
-                    <input v-model="form.name" placeholder="ФИО" class="input-dark">
-                    <input v-model="form.phone" type="tel" placeholder="Телефон" class="input-dark">
-                    <input v-model="form.address" placeholder="Отделение почты" class="input-dark">
-                    <p class="text-[11px] text-white/40 uppercase">Внимание: Проверьте данные. Ошибки ведут к задержкам.</p>
-                    <button @click="finishOrder" class="w-full bg-white text-black py-4 rounded-2xl font-bold">Подтвердить</button>
-                </div>
-            </div>
+    <div id="admin" class="page">
+        <button class="back-btn" onclick="openPage('catalog')">← Скасувати</button>
+        <h2 style="margin-bottom: 20px;" id="admin-title">Новий товар</h2>
+        
+        <div class="form-group">
+            <label>Фото товару</label>
+            <label class="image-upload-wrapper" id="upload-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                    <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                <img id="preview-img" style="display: none;">
+                <input type="file" id="file-input" accept="image/*" onchange="handleImageUpload(event)">
+            </label>
+        </div>
+        
+        <div class="form-group">
+            <label>Назва</label>
+            <input type="text" id="p-name" placeholder="Введіть назву">
+        </div>
+        <div class="form-group">
+            <label>Ціна (₴)</label>
+            <input type="number" id="p-price" placeholder="0">
+        </div>
+        <div class="form-group">
+            <label>Кількість на складі (Stock)</label>
+            <input type="number" id="p-stock" placeholder="0">
+        </div>
+        
+        <button onclick="saveProduct()">Зберегти товар</button>
+    </div>
 
-            <div v-else-if="view === 'admin'" key="admin" class="space-y-6 flex flex-col items-center">
-                <h2 class="text-xl font-medium">Новый товар</h2>
-                <div class="photo-upload" @click="$refs.fileInput.click()">
-                    <img v-if="newP.image" :src="newP.image" class="w-full h-full object-cover">
-                    <i v-else class="fas fa-camera text-2xl text-white/20"></i>
-                </div>
-                <input type="file" ref="fileInput" class="hidden" @change="handleUpload" accept="image/*">
-                <div class="w-full space-y-3">
-                    <input v-model="newP.name" placeholder="Название" class="input-dark">
-                    <input v-model.number="newP.price" type="number" placeholder="Цена в ₴" class="input-dark">
-                    <button @click="saveProduct" :disabled="cooldown > 0" class="w-full bg-white text-black py-4 rounded-2xl font-bold disabled:opacity-50">
-                        {{ cooldown > 0 ? `Подождите ${cooldown}с` : 'Опубликовать' }}
-                    </button>
-                </div>
-            </div>
-        </transition>
-    </main>
-</div>
+    <div class="admin-fab" id="admin-fab" onclick="openAdminForm()">+</div>
 
-<script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-    const ADMIN_IDS = [5548318726]; // ТВОЙ ID
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
 
-    Vue.createApp({
-        data() {
-            return {
-                view: 'catalog', products: [], cart: [], toast: '', cooldown: 0,
-                isAdmin: ADMIN_IDS.includes(tg.initDataUnsafe.user?.id),
-                newP: { name: '', price: null, image: '' },
-                form: { name: '', phone: '', address: '' }
-            }
-        },
-        computed: {
-            cartCount() { return this.cart.reduce((a, b) => a + b.qty, 0) },
-            totalSum() { return this.cart.reduce((a, b) => a + (b.price * b.qty), 0) }
-        },
-        mounted() {
-            fetch('products.json?' + Date.now()).then(r => r.json()).then(data => this.products = data).catch(e => console.log('Empty'));
-        },
-        methods: {
-            goBack() { this.view = (this.view === 'checkout') ? 'cart' : 'catalog'; },
-            showToast(msg) { this.toast = msg; setTimeout(() => this.toast = '', 3000); },
-            addToCart(item) {
-                const inCart = this.cart.find(i => i.id === item.id);
-                if (inCart) {
-                    if (inCart.qty < 5) { inCart.qty++; tg.HapticFeedback.impactOccurred('light'); }
-                    else tg.showAlert('Лимит 5 шт');
-                } else { this.cart.push({ ...item, qty: 1 }); tg.HapticFeedback.notificationOccurred('success'); }
-            },
-            updateQty(item, delta) {
-                item.qty += delta;
-                if (item.qty <= 0) this.cart = this.cart.filter(i => i.id !== item.id);
-                tg.HapticFeedback.selectionChanged();
-            },
-            handleUpload(e) {
-                const file = e.target.files[0];
-                const reader = new FileReader();
-                reader.onload = (f) => { this.newP.image = f.target.result; };
-                reader.readAsDataURL(file);
-            },
-            saveProduct() {
-                if (!this.newP.name || !this.newP.price || !this.newP.image) return tg.showAlert('Заполните всё');
-                const p = { ...this.newP, id: Date.now() };
-                this.products.push(p);
-                tg.sendData(JSON.stringify({ type: 'admin', action: 'add', data: p }));
-                this.showToast('Товар выложен!');
-                this.view = 'catalog';
-                this.newP = { name: '', price: null, image: '' };
-                this.cooldown = 5;
-                const timer = setInterval(() => { this.cooldown--; if(this.cooldown <= 0) clearInterval(timer); }, 1000);
-            },
-            deleteProduct(id) {
-                this.products = this.products.filter(p => p.id !== id);
-                tg.sendData(JSON.stringify({ type: 'admin', action: 'delete', data: { id } }));
-                this.showToast('Товар удален');
-            },
-            finishOrder() {
-                if (!this.form.name || !this.form.phone || !this.form.address) return tg.showAlert('Заполните поля');
-                const orderData = { type: 'order', user: this.form, items: this.cart, total: this.totalSum };
-                tg.sendData(JSON.stringify(orderData));
-                this.cart = [];
-                // Если sendData не закрывает приложение автоматически, вызываем close
-                setTimeout(() => tg.close(), 100);
+        // НАЛАШТУВАННЯ
+        const ADMIN_IDS = [123456789]; // ⚠️ ЗАМІНІТЬ НА ВАШ TELEGRAM ID
+        const API_URL = 'http://127.0.0.1:8000'; // URL вашого бекенду
+        
+        // Стан додатку
+        let products = [];
+        let cart = {}; // { productId: quantity }
+        let currentEditId = null;
+        let base64Image = null;
+
+        const userId = tg.initDataUnsafe?.user?.id;
+        const isAdmin = ADMIN_IDS.includes(userId);
+
+        // Ініціалізація
+        if (isAdmin) {
+            document.getElementById('admin-fab').style.display = 'block';
+        }
+
+        function haptic() {
+            tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function openPage(pageId) {
+            haptic();
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            if(pageId === 'catalog') {
+                document.getElementById('header-title').innerText = 'Каталог';
+                fetchProducts();
+            } else if(pageId === 'cart') {
+                document.getElementById('header-title').innerText = 'Кошик';
+                renderCart();
+            } else if(pageId === 'admin') {
+                document.getElementById('header-title').innerText = 'Керування';
             }
         }
-    }).mount('#app');
-</script>
+
+        // --- API РОБОТА З ТОВАРАМИ ---
+        
+        async function fetchProducts() {
+            try {
+                const res = await fetch(`${API_URL}/products`);
+                products = await res.json();
+                renderCatalog();
+            } catch (err) {
+                console.error("Помилка завантаження товарів", err);
+            }
+        }
+
+        async function saveProduct() {
+            haptic();
+            const name = document.getElementById('p-name').value;
+            const price = parseFloat(document.getElementById('p-price').value);
+            const stock = parseInt(document.getElementById('p-stock').value);
+
+            if(!name || isNaN(price) || isNaN(stock) || !base64Image) {
+                tg.showAlert("Будь ласка, заповніть всі поля та додайте фото");
+                return;
+            }
+
+            const payload = { name, price, stock, image: base64Image };
+            const method = currentEditId ? 'PUT' : 'POST';
+            const url = currentEditId ? `${API_URL}/products/${currentEditId}` : `${API_URL}/products`;
+
+            try {
+                await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                openPage('catalog');
+            } catch(e) {
+                tg.showAlert("Помилка збереження");
+            }
+        }
+
+        async function deleteProduct(id) {
+            haptic();
+            if(!confirm("Ви впевнені, що хочете видалити товар?")) return;
+            try {
+                await fetch(`${API_URL}/products/${id}`, { method: 'DELETE' });
+                fetchProducts();
+            } catch(e) {
+                tg.showAlert("Помилка видалення");
+            }
+        }
+
+        // --- РЕНДЕР КАТАЛОГУ ---
+        
+        function renderCatalog() {
+            const container = document.getElementById('products-container');
+            container.innerHTML = '';
+
+            products.forEach(p => {
+                const isOutOfStock = p.stock <= 0;
+                
+                let adminHtml = '';
+                if(isAdmin) {
+                    adminHtml = `
+                        <div class="admin-controls">
+                            <button onclick="editProduct('${p.id}')">✏️</button>
+                            <button class="danger" onclick="deleteProduct('${p.id}')">🗑️</button>
+                        </div>
+                    `;
+                }
+
+                const btnHtml = isOutOfStock 
+                    ? `<button disabled>Немає в наявності</button>`
+                    : `<button onclick="addToCart('${p.id}')">Додати у кошик</button>`;
+
+                const card = document.createElement('div');
+                card.className = 'glass product-card';
+                card.innerHTML = `
+                    <img src="${p.image}" class="product-img">
+                    <div class="product-name">${p.name}</div>
+                    <div class="product-price">${p.price} ₴ (Залишок: ${p.stock})</div>
+                    ${btnHtml}
+                    ${adminHtml}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- ЛОГІКА КОШИКА ---
+        
+        function updateCartBadge() {
+            const count = Object.values(cart).reduce((a, b) => a + b, 0);
+            document.getElementById('cart-count').innerText = count;
+        }
+
+        function addToCart(id) {
+            haptic();
+            const product = products.find(p => p.id === id);
+            if(!product) return;
+
+            const currentQty = cart[id] || 0;
+            if(currentQty >= product.stock) {
+                tg.showAlert(`Доступно лише ${product.stock} шт.`);
+                return;
+            }
+
+            cart[id] = currentQty + 1;
+            updateCartBadge();
+            tg.showAlert("Товар додано у кошик!"); // Ненав'язливе повідомлення від Telegram
+        }
+
+        function changeCartQty(id, delta) {
+            haptic();
+            const product = products.find(p => p.id === id);
+            
+            if(!cart[id]) return;
+            
+            const newQty = cart[id] + delta;
+            
+            if(newQty > product.stock) {
+                tg.showAlert(`Доступно лише ${product.stock} шт.`);
+                return;
+            }
+            
+            if(newQty <= 0) {
+                delete cart[id];
+            } else {
+                cart[id] = newQty;
+            }
+            updateCartBadge();
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-container');
+            container.innerHTML = '';
+            let totalSum = 0;
+
+            const cartIds = Object.keys(cart);
+            if(cartIds.length === 0) {
+                container.innerHTML = '<div style="text-align:center; opacity:0.5; margin-top: 20px;">Кошик порожній</div>';
+                document.getElementById('cart-total-price').innerText = 'Разом: 0 ₴';
+                return;
+            }
+
+            cartIds.forEach(id => {
+                const product = products.find(p => p.id === id);
+                if(!product) return;
+                
+                const qty = cart[id];
+                const sum = qty * product.price;
+                totalSum += sum;
+
+                const item = document.createElement('div');
+                item.className = 'glass cart-item';
+                item.innerHTML = `
+                    <img src="${product.image}" class="cart-item-img">
+                    <div class="cart-item-info">
+                        <div style="font-weight: 600;">${product.name}</div>
+                        <div style="font-size: 14px; opacity: 0.8;">${product.price} ₴</div>
+                    </div>
+                    <div class="cart-controls">
+                        <button class="glass" onclick="changeCartQty('${id}', -1)">-</button>
+                        <span>${qty}</span>
+                        <button class="glass" onclick="changeCartQty('${id}', 1)">+</button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+
+            document.getElementById('cart-total-price').innerText = `Разом: ${totalSum} ₴`;
+        }
+
+        // --- ЛОГІКА АДМІНА (Форма) ---
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                base64Image = e.target.result;
+                const img = document.getElementById('preview-img');
+                img.src = base64Image;
+                img.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function openAdminForm() {
+            currentEditId = null;
+            document.getElementById('admin-title').innerText = 'Новий товар';
+            document.getElementById('p-name').value = '';
+            document.getElementById('p-price').value = '';
+            document.getElementById('p-stock').value = '';
+            document.getElementById('preview-img').style.display = 'none';
+            base64Image = null;
+            openPage('admin');
+        }
+
+        function editProduct(id) {
+            const p = products.find(x => x.id === id);
+            if(!p) return;
+            currentEditId = id;
+            document.getElementById('admin-title').innerText = 'Редагувати товар';
+            document.getElementById('p-name').value = p.name;
+            document.getElementById('p-price').value = p.price;
+            document.getElementById('p-stock').value = p.stock;
+            
+            base64Image = p.image;
+            const img = document.getElementById('preview-img');
+            img.src = base64Image;
+            img.style.display = 'block';
+            
+            openPage('admin');
+        }
+
+        // Запуск
+        fetchProducts();
+
+    </script>
 </body>
 </html>
